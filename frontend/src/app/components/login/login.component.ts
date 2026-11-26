@@ -107,12 +107,17 @@ export class LoginComponent implements OnDestroy {
         this.isSuccess.set(false);
         this.loginForm.enable({ emitEvent: false });
 
-        let errorText = err.error?.error || 'No se pudo iniciar sesión. Verifique sus credenciales.';
+        let errorText: string;
+        if (err.status === 0) {
+          errorText = 'No se pudo conectar con el servidor. Verifica tu conexión o el permiso CORS.';
+        } else {
+          errorText = err.error?.error || 'No se pudo iniciar sesión. Inténtalo nuevamente.';
 
-        if (errorText.toLowerCase().includes('inactiva') || errorText.toLowerCase().includes('inactivo')) {
-          errorText = 'Tu cuenta o sucursal se encuentra inactiva. Por favor contacta a Gerencia.';
-        } else if (errorText.toLowerCase().includes('inválidas') || errorText.toLowerCase().includes('credenciales')) {
-          errorText = 'Correo electrónico o contraseña incorrectos. Verifica tus datos e inténtalo nuevamente.';
+          if (errorText.toLowerCase().includes('inactiva') || errorText.toLowerCase().includes('inactivo')) {
+            errorText = 'Tu cuenta o sucursal se encuentra inactiva. Por favor contacta a Gerencia.';
+          } else if (errorText.toLowerCase().includes('inválidas') || errorText.toLowerCase().includes('credenciales')) {
+            errorText = 'Correo electrónico o contraseña incorrectos. Verifica tus datos e inténtalo nuevamente.';
+          }
         }
 
         this.errorMessage.set(errorText);
