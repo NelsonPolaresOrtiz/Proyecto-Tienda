@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://candy-boom-api.onrender.com/api'
+  apiUrl: 'https://proyecto-tienda-x0f4.onrender.com/api'
 };
