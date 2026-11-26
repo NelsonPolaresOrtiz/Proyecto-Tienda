@@ -50,16 +50,17 @@ async function seedMasivo() {
   const connection = await pool.getConnection();
 
   try {
-    // 1. Limpieza segura de tablas operativas y maestras
+    // 1. Limpieza segura en orden hijo -> padre (compatible con TiDB Cloud y MySQL sin TRUNCATE DDL)
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
     const tablasLimpiar = [
+      'configuracion_alertas',
       'auditoria_actividades',
       'ajustes_stock',
+      'traspasos_sucursales',
+      'egresos_gastos',
       'venta_detalles',
       'ventas',
-      'egresos_gastos',
       'arqueos_caja',
-      'traspasos_sucursales',
       'inventario_lotes',
       'sucursal_productos',
       'productos',
@@ -68,7 +69,7 @@ async function seedMasivo() {
       'sucursales'
     ];
     for (const tabla of tablasLimpiar) {
-      await connection.query(`TRUNCATE TABLE \`${tabla}\``);
+      await connection.query(`DELETE FROM \`${tabla}\``);
     }
     await connection.query('SET FOREIGN_KEY_CHECKS = 1');
 
