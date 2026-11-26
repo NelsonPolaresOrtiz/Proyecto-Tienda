@@ -32,7 +32,11 @@ class InventarioService {
       JOIN productos p ON sp.producto_id = p.id
       JOIN categorias c ON p.categoria_id = c.id
       LEFT JOIN (
-        SELECT il1.producto_id, il1.sucursal_id, il1.numero_lote, il1.fecha_vencimiento, il1.en_oferta
+        SELECT il1.producto_id,
+               il1.sucursal_id,
+               SUBSTRING_INDEX(GROUP_CONCAT(il1.numero_lote ORDER BY il1.id ASC SEPARATOR '||'), '||', 1) AS numero_lote,
+               MIN(il1.fecha_vencimiento) AS fecha_vencimiento,
+               MAX(il1.en_oferta) AS en_oferta
         FROM inventario_lotes il1
         INNER JOIN (
           SELECT producto_id, sucursal_id, MIN(fecha_vencimiento) as min_venc
