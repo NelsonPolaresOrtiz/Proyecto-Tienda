@@ -1,0 +1,13 @@
+{
+  "name": "candy-boom-pos-workspace",
+  "version": "1.0.0",
+  "description": "Candy Boom - POS y Gestión Multi-Sucursal para Minimarket en Bolivia",
+  "private": true,
+  "scripts": {
+    "start": "concurrently -n \"API,ANGULAR\" -c \"blue,orange\" \"npm run start --prefix backend\" \"npm run start --prefix frontend\"",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}

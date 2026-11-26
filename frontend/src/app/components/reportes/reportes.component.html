@@ -1,0 +1,348 @@
+<div class="space-y-4">
+
+  <!-- HEADER -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Reportes</h1>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        (click)="descargarExcel()"
+        [disabled]="isExportingExcel() || isLoading()"
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white bg-[#15803D] hover:bg-[#166534] transition-colors disabled:opacity-50 cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/>
+        </svg>
+        <span>{{ isExportingExcel() ? 'Generando...' : 'Exportar Excel' }}</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="descargarPDF()"
+        [disabled]="isExportingPDF() || isLoading()"
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold text-white bg-[#143628] hover:bg-[#1E4D3B] transition-colors disabled:opacity-50 cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span>{{ isExportingPDF() ? 'Generando...' : 'Exportar PDF' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div *ngIf="feedbackMessage()"
+    [ngClass]="feedbackMessage()?.type === 'success' ? 'bg-white text-[#15803D] border-[#15803D]' : 'bg-white text-[#DC2626] border-[#DC2626]'"
+    class="px-3.5 py-2.5 rounded-md border text-xs font-semibold flex items-center justify-between">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="text-[#52665D] hover:text-[#12261E] p-0.5 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs space-y-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Sucursal</label>
+        <select
+          [ngModel]="sucursalSeleccionada()"
+          (ngModelChange)="sucursalSeleccionada.set($event)"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+          <option value="todas">Todas las Tiendas</option>
+          <option *ngFor="let s of sucursales()" [value]="s.id">
+            {{ s.nombre }} ({{ s.codigo }})
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Período</label>
+        <select
+          [ngModel]="periodoSeleccionado()"
+          (ngModelChange)="periodoSeleccionado.set($event)"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+          <option value="diario">Hoy</option>
+          <option value="semanal">Últimos 7 días</option>
+          <option value="mensual">Mes en curso</option>
+          <option value="anual">Año en curso</option>
+          <option value="personalizado">Rango personalizado</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Método de Pago</label>
+        <select
+          [ngModel]="metodoPagoSeleccionado()"
+          (ngModelChange)="metodoPagoSeleccionado.set($event)"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+          <option value="todos">Todos</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="qr_simple">QR Simple</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="mixto">Mixto</option>
+        </select>
+      </div>
+
+      <div class="flex items-end">
+        <button
+          type="button"
+          (click)="consultarReporte()"
+          [disabled]="isLoading()"
+          class="w-full py-2 px-4 rounded-md font-semibold text-xs text-white bg-[#E0432D] hover:bg-[#C43420] transition-colors cursor-pointer disabled:opacity-50">
+          {{ isLoading() ? 'Consultando...' : 'Aplicar Filtros' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="periodoSeleccionado() === 'personalizado'" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#E7E0D3] text-xs">
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Desde</label>
+        <input
+          type="date"
+          [ngModel]="fechaInicio()"
+          (ngModelChange)="fechaInicio.set($event)"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3]"
+        />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Hasta</label>
+        <input
+          type="date"
+          [ngModel]="fechaFin()"
+          (ngModelChange)="fechaFin.set($event)"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3]"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-[#52665D]">Total Ingresos</span>
+      <p class="text-xl font-bold text-[#143628] mt-1 tabular-nums">Bs. {{ totales().totalIngresos | number:'1.2-2' }}</p>
+      <div class="mt-2 text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 flex justify-between tabular-nums">
+        <span>{{ totales().cantidadVentas }} ventas</span>
+        <span>QR: Bs. {{ totales().totalQrVentas | number:'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-[#52665D]">Total Egresos</span>
+      <p class="text-xl font-bold text-[#DC2626] mt-1 tabular-nums">Bs. {{ totales().totalEgresos | number:'1.2-2' }}</p>
+      <div class="mt-2 text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 flex justify-between tabular-nums">
+        <span>{{ totales().cantidadEgresos }} egresos</span>
+        <span>Caja: Bs. {{ totales().totalEgresosCaja | number:'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <div
+      [ngClass]="totales().utilidadNeta >= 0 ? 'border-l-4 border-l-[#15803D]' : 'border-l-4 border-l-[#DC2626]'"
+      class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-[#52665D]">Utilidad Neta</span>
+      <p class="text-xl font-bold mt-1 tabular-nums" [ngClass]="totales().utilidadNeta >= 0 ? 'text-[#15803D]' : 'text-[#DC2626]'">
+        Bs. {{ totales().utilidadNeta | number:'1.2-2' }}
+      </p>
+      <div class="mt-2 text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 flex justify-between tabular-nums">
+        <span>Margen</span>
+        <span class="font-semibold text-[#143628]">{{ totales().margenUtilidad }}%</span>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-[#52665D]">Efectivo Neto en Caja</span>
+      <p class="text-xl font-bold text-[#15803D] mt-1 tabular-nums">
+        Bs. {{ (totales().totalEfectivoVentas - totales().totalEgresosCaja) | number:'1.2-2' }}
+      </p>
+      <div class="mt-2 text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 flex justify-between tabular-nums">
+        <span>Ventas: Bs. {{ totales().totalEfectivoVentas | number:'1.0-0' }}</span>
+        <span>Gastos: Bs. {{ totales().totalEgresosCaja | number:'1.0-0' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PESTAÑAS Y TABLAS -->
+  <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+
+    <div class="flex items-center border-b border-[#E7E0D3] px-4 pt-2.5 gap-2 bg-[#F5EFE6]">
+      <button
+        type="button"
+        (click)="tabActiva.set('resumen')"
+        [ngClass]="tabActiva() === 'resumen' ? 'border-[#E0432D] text-[#143628] bg-white font-bold' : 'border-transparent text-[#52665D] hover:text-[#12261E] font-semibold'"
+        class="px-3.5 py-2 border-b-2 text-xs transition-colors cursor-pointer">
+        Estado de Resultados
+      </button>
+
+      <button
+        type="button"
+        (click)="tabActiva.set('ventas')"
+        [ngClass]="tabActiva() === 'ventas' ? 'border-[#E0432D] text-[#143628] bg-white font-bold' : 'border-transparent text-[#52665D] hover:text-[#12261E] font-semibold'"
+        class="px-3.5 py-2 border-b-2 text-xs transition-colors tabular-nums cursor-pointer">
+        Ventas ({{ ventas().length }})
+      </button>
+
+      <button
+        type="button"
+        (click)="tabActiva.set('egresos')"
+        [ngClass]="tabActiva() === 'egresos' ? 'border-[#E0432D] text-[#143628] bg-white font-bold' : 'border-transparent text-[#52665D] hover:text-[#12261E] font-semibold'"
+        class="px-3.5 py-2 border-b-2 text-xs transition-colors tabular-nums cursor-pointer">
+        Egresos ({{ egresos().length }})
+      </button>
+    </div>
+
+    <!-- PESTAÑA 1: ESTADO DE RESULTADOS -->
+    <div *ngIf="tabActiva() === 'resumen'" class="overflow-x-auto">
+      <table class="w-full text-xs text-left">
+        <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">Concepto</th>
+            <th class="py-2.5 px-3">Tipo</th>
+            <th class="py-2.5 px-3 text-right">Participación</th>
+            <th class="py-2.5 px-3 text-right">Monto (Bs.)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+          <tr class="hover:bg-[#F5EFE6]">
+            <td class="py-2.5 px-3 font-medium text-[#143628]">Ventas en Efectivo</td>
+            <td class="py-2.5 px-3 font-semibold text-[#15803D]">Ingreso</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D]">
+              {{ totales().totalIngresos > 0 ? (totales().totalEfectivoVentas / totales().totalIngresos * 100 | number:'1.1-1') : 0 }}%
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#143628]">Bs. {{ totales().totalEfectivoVentas | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="hover:bg-[#F5EFE6]">
+            <td class="py-2.5 px-3 font-medium text-[#143628]">Ventas por QR Simple</td>
+            <td class="py-2.5 px-3 font-semibold text-[#15803D]">Ingreso</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D]">
+              {{ totales().totalIngresos > 0 ? (totales().totalQrVentas / totales().totalIngresos * 100 | number:'1.1-1') : 0 }}%
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#143628]">Bs. {{ totales().totalQrVentas | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="hover:bg-[#F5EFE6]">
+            <td class="py-2.5 px-3 font-medium text-[#143628]">Ventas con Tarjeta</td>
+            <td class="py-2.5 px-3 font-semibold text-[#15803D]">Ingreso</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D]">
+              {{ totales().totalIngresos > 0 ? (totales().totalTarjetaVentas / totales().totalIngresos * 100 | number:'1.1-1') : 0 }}%
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#143628]">Bs. {{ totales().totalTarjetaVentas | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="bg-[#F5EFE6] font-bold text-[#143628]">
+            <td class="py-2.5 px-3 uppercase" colspan="2">Total Ingresos (A)</td>
+            <td class="py-2.5 px-3 text-right tabular-nums">100.0%</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#15803D]">Bs. {{ totales().totalIngresos | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="hover:bg-[#F5EFE6]">
+            <td class="py-2.5 px-3 font-medium text-[#143628]">Gastos en Efectivo</td>
+            <td class="py-2.5 px-3 font-semibold text-[#DC2626]">Egreso</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D]">
+              {{ totales().totalEgresos > 0 ? (totales().totalEgresosCaja / totales().totalEgresos * 100 | number:'1.1-1') : 0 }}%
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#DC2626]">Bs. {{ totales().totalEgresosCaja | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="hover:bg-[#F5EFE6]">
+            <td class="py-2.5 px-3 font-medium text-[#143628]">Gastos por Transferencia / QR</td>
+            <td class="py-2.5 px-3 font-semibold text-[#DC2626]">Egreso</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D]">
+              {{ totales().totalEgresos > 0 ? (totales().totalEgresosTransferencia / totales().totalEgresos * 100 | number:'1.1-1') : 0 }}%
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#DC2626]">Bs. {{ totales().totalEgresosTransferencia | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="bg-[#F5EFE6] font-bold text-[#143628]">
+            <td class="py-2.5 px-3 uppercase" colspan="2">Total Egresos (B)</td>
+            <td class="py-2.5 px-3 text-right tabular-nums">100.0%</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#DC2626]">Bs. {{ totales().totalEgresos | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr class="bg-[#143628] text-[#FBF8F3] font-bold">
+            <td class="py-3 px-3 uppercase" colspan="2">Utilidad Neta (A - B)</td>
+            <td class="py-3 px-3 text-right tabular-nums text-[#FBF8F3]/80">Margen {{ totales().margenUtilidad }}%</td>
+            <td class="py-3 px-3 text-right tabular-nums text-[#FBF8F3]">Bs. {{ totales().utilidadNeta | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PESTAÑA 2: DETALLE DE VENTAS -->
+    <div *ngIf="tabActiva() === 'ventas'">
+      <div *ngIf="ventas().length === 0" class="text-center py-10 text-[#52665D] text-xs">
+        No hay ventas en este período.
+      </div>
+
+      <div *ngIf="ventas().length > 0" class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+            <tr>
+              <th class="py-2.5 px-3">Comprobante</th>
+              <th class="py-2.5 px-3">Fecha</th>
+              <th class="py-2.5 px-3">Sucursal</th>
+              <th class="py-2.5 px-3">Cajero</th>
+              <th class="py-2.5 px-3">Cliente</th>
+              <th class="py-2.5 px-3">Método</th>
+              <th class="py-2.5 px-3 text-right">Subtotal</th>
+              <th class="py-2.5 px-3 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#E7E0D3]">
+            <tr *ngFor="let v of ventas()" class="hover:bg-[#F5EFE6]">
+              <td class="py-2.5 px-3 font-mono font-semibold text-[#143628]">{{ v.numero_comprobante }}</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-[#52665D] tabular-nums">{{ v.fecha_venta | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="py-2.5 px-3 font-medium text-[#143628]">{{ v.sucursal_nombre }}</td>
+              <td class="py-2.5 px-3 text-[#52665D]">{{ v.cajero_nombre }}</td>
+              <td class="py-2.5 px-3 text-[#12261E]">{{ v.cliente_nombre }}</td>
+              <td class="py-2.5 px-3 uppercase text-[11px] font-semibold text-[#52665D]">{{ v.metodo_pago }}</td>
+              <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D]">Bs. {{ Number(v.subtotal).toFixed(2) }}</td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#143628]">Bs. {{ Number(v.monto_total).toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: DETALLE DE EGRESOS -->
+    <div *ngIf="tabActiva() === 'egresos'">
+      <div *ngIf="egresos().length === 0" class="text-center py-10 text-[#52665D] text-xs">
+        No hay egresos en este período.
+      </div>
+
+      <div *ngIf="egresos().length > 0" class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+            <tr>
+              <th class="py-2.5 px-3">Fecha</th>
+              <th class="py-2.5 px-3">Sucursal</th>
+              <th class="py-2.5 px-3">Usuario</th>
+              <th class="py-2.5 px-3">Categoría</th>
+              <th class="py-2.5 px-3">Concepto</th>
+              <th class="py-2.5 px-3">Beneficiario</th>
+              <th class="py-2.5 px-3">Método</th>
+              <th class="py-2.5 px-3 text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#E7E0D3]">
+            <tr *ngFor="let g of egresos()" class="hover:bg-[#F5EFE6]">
+              <td class="py-2.5 px-3 font-mono text-[11px] text-[#52665D] tabular-nums">{{ g.fecha_gasto | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="py-2.5 px-3 font-medium text-[#143628]">{{ g.sucursal_nombre }}</td>
+              <td class="py-2.5 px-3 text-[#52665D]">{{ g.cajero_nombre }}</td>
+              <td class="py-2.5 px-3 font-semibold text-[#143628]">{{ g.categoria_gasto }}</td>
+              <td class="py-2.5 px-3 text-[#12261E]">{{ g.concepto }}</td>
+              <td class="py-2.5 px-3 text-[#52665D]">{{ g.beneficiario || 'S/N' }}</td>
+              <td class="py-2.5 px-3 text-[#52665D]">{{ g.metodo_pago === 'efectivo' ? 'Caja Física' : 'QR / Transf.' }}</td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#DC2626]">Bs. {{ Number(g.monto).toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>

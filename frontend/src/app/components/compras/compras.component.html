@@ -1,0 +1,508 @@
+<div class="space-y-4">
+
+  <!-- ENCABEZADO -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Registro de Compras</h1>
+
+    <div class="bg-white px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs font-semibold text-[#143628] tabular-nums">
+      Moneda: Bs.
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div *ngIf="feedbackMessage()"
+    [ngClass]="feedbackMessage()?.type === 'success' ? 'bg-white text-[#15803D] border-[#15803D]' : 'bg-white text-[#DC2626] border-[#DC2626]'"
+    class="px-3.5 py-2.5 rounded-md border text-xs font-semibold flex items-center justify-between">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="text-[#52665D] hover:text-[#12261E] p-0.5 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 1. CABECERA ÚNICA DE LA COMPRA -->
+  <div class="bg-white rounded-lg p-4 border border-[#E7E0D3] shadow-xs">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Sucursal que Recibe *</label>
+        <select
+          [ngModel]="sucursalId()"
+          (ngModelChange)="sucursalId.set(Number($event))"
+          [disabled]="auth.isVendedor()"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold text-[#143628] bg-white focus:border-[#E0432D] outline-none disabled:bg-[#F5EFE6] disabled:text-[#52665D] disabled:cursor-not-allowed">
+          <option *ngFor="let s of sucursales()" [value]="s.id">
+            {{ s.nombre }} ({{ s.codigo }})
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Proveedor / Distribuidor *</label>
+        <input
+          type="text"
+          [ngModel]="proveedor()"
+          (ngModelChange)="proveedor.set($event)"
+          placeholder="Ej. Arcor, PIL, EMBOL..."
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-[#143628] bg-white focus:border-[#E0432D] outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">Fecha de Ingreso *</label>
+        <input
+          type="date"
+          [ngModel]="fechaIngreso()"
+          (ngModelChange)="fechaIngreso.set($event)"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-[#143628] bg-white focus:border-[#E0432D] outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#52665D] mb-1">N° Comprobante / Factura</label>
+        <input
+          type="text"
+          [ngModel]="numeroFactura()"
+          (ngModelChange)="numeroFactura.set($event)"
+          placeholder="Ej. FAC-00821"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-[#143628] bg-white focus:border-[#E0432D] outline-none" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. CUERPO EN 2 COLUMNAS LADO A LADO -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+    <!-- COLUMNA IZQUIERDA (5 cols) -->
+    <div class="lg:col-span-5 bg-white rounded-lg p-4 border border-[#E7E0D3] shadow-xs space-y-3.5">
+
+      <div class="flex items-center justify-between pb-2.5 border-b border-[#E7E0D3]">
+        <h2 class="text-sm font-bold text-[#143628]">Agregar Producto</h2>
+        <button
+          type="button"
+          (click)="abrirModalNuevoProducto()"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-[#143628] bg-white hover:bg-[#F5EFE6] border border-[#E7E0D3] transition-colors cursor-pointer">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Nuevo Producto</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+
+        <div class="space-y-1.5">
+          <label class="block font-semibold text-[#12261E]">Producto *</label>
+          <input
+            type="text"
+            [ngModel]="busquedaProducto()"
+            (ngModelChange)="busquedaProducto.set($event)"
+            placeholder="Filtrar por nombre o código..."
+            class="w-full px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs text-[#143628] bg-white focus:border-[#E0432D] outline-none" />
+
+          <select
+            [ngModel]="selectedProductoId()"
+            (ngModelChange)="seleccionarProducto($event)"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-xs font-semibold text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+            <option *ngFor="let p of catalogoFiltrado()" [value]="p.id">
+              {{ p.nombre }} [{{ p.categoria_nombre }}] — {{ p.codigo_barras }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Cuadrícula 2x2 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Cajas *</label>
+            <input
+              type="number"
+              min="0.5"
+              step="1"
+              [ngModel]="cajasCompradas()"
+              (ngModelChange)="cajasCompradas.set(Number($event))"
+              placeholder="Ej. 3"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-sm font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Unidades / Caja *</label>
+            <input
+              type="number"
+              min="1"
+              [ngModel]="unidadesPorCaja()"
+              (ngModelChange)="unidadesPorCaja.set(Number($event))"
+              placeholder="24"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-sm font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+            <div class="flex items-center gap-1 mt-1">
+              <button
+                *ngFor="let u of [12, 24, 46, 100]"
+                type="button"
+                (click)="setAtajoUnidades(u)"
+                [ngClass]="unidadesPorCaja() === u ? 'bg-[#143628] text-white' : 'bg-[#F5EFE6] hover:bg-[#EAE1D3] text-[#52665D]'"
+                class="px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums cursor-pointer">
+                {{ u }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Costo por Caja (Bs.) *</label>
+            <div class="relative">
+              <span class="absolute left-2.5 top-2 text-xs text-[#52665D]">Bs.</span>
+              <input
+                type="number"
+                step="0.50"
+                min="0"
+                [ngModel]="costoCaja()"
+                (ngModelChange)="costoCaja.set(Number($event))"
+                placeholder="72.00"
+                class="w-full pl-8 pr-3 py-2 rounded-md border border-[#E7E0D3] text-sm font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Precio Venta (Bs.) *</label>
+            <div class="relative">
+              <span class="absolute left-2.5 top-2 text-xs text-[#52665D]">Bs.</span>
+              <input
+                type="number"
+                step="0.10"
+                min="0"
+                [ngModel]="precioVentaTienda()"
+                (ngModelChange)="precioVentaTienda.set(Number($event))"
+                placeholder="5.00"
+                class="w-full pl-8 pr-3 py-2 rounded-md border border-[#E7E0D3] text-sm font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Vencimiento *</label>
+            <input
+              type="date"
+              [ngModel]="fechaVencimiento()"
+              (ngModelChange)="fechaVencimiento.set($event)"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] text-[#143628] focus:border-[#E0432D] outline-none" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-semibold text-[#12261E]">N° de Lote</label>
+              <button
+                type="button"
+                (click)="numeroLoteManual.set(generarLoteAuto())"
+                class="text-[11px] font-semibold text-[#E0432D] hover:underline cursor-pointer">
+                Generar
+              </button>
+            </div>
+            <input
+              type="text"
+              [ngModel]="numeroLoteManual()"
+              (ngModelChange)="numeroLoteManual.set($event)"
+              placeholder="LOT-2026-01"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-mono text-xs uppercase text-[#143628] focus:border-[#E0432D] outline-none" />
+          </div>
+        </div>
+
+        <!-- Barra Resumen -->
+        <div class="p-2.5 rounded-md bg-[#F5EFE6] border border-[#E7E0D3] text-xs flex items-center justify-between tabular-nums">
+          <span>Entran: <strong class="text-[#143628]">{{ totalUnidadesActual() }} u.</strong></span>
+          <span>Costo: <strong class="text-[#143628]">Bs. {{ costoUnitarioActual().toFixed(2) }}/u.</strong></span>
+          <span>Ganancia: <strong class="text-[#15803D]">+Bs. {{ gananciaUnitariaActual().toFixed(2) }}/u.</strong></span>
+        </div>
+
+        <button
+          type="button"
+          (click)="agregarProductoALista()"
+          class="w-full py-2.5 px-4 rounded-md font-semibold text-xs text-white bg-[#E0432D] hover:bg-[#C43420] transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+          <span>Agregar Producto a la Compra</span>
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: DETALLE DE LA COMPRA (7 cols) -->
+    <div class="lg:col-span-7 bg-white rounded-lg border border-[#E7E0D3] shadow-xs flex flex-col justify-between overflow-hidden">
+
+      <div>
+        <div class="px-4 py-3 border-b border-[#E7E0D3] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-[#143628]">Detalle de la Compra</h2>
+            <span class="text-xs text-[#52665D] tabular-nums">({{ itemsCompra().length }} ítem(s))</span>
+          </div>
+
+          <button
+            *ngIf="itemsCompra().length > 0"
+            type="button"
+            (click)="limpiarNota()"
+            class="text-xs font-semibold text-[#DC2626] hover:underline cursor-pointer">
+            Vaciar lista
+          </button>
+        </div>
+
+        <div class="overflow-y-auto max-h-[340px]">
+
+          <div *ngIf="itemsCompra().length === 0" class="py-14 text-center text-[#52665D] text-xs px-6">
+            Agrega productos desde el formulario de la izquierda.
+          </div>
+
+          <table *ngIf="itemsCompra().length > 0" class="w-full text-left text-xs">
+            <thead class="bg-[#F5EFE6] text-[#52665D] font-semibold border-b border-[#E7E0D3] sticky top-0">
+              <tr>
+                <th class="py-2.5 px-3">Producto</th>
+                <th class="py-2.5 px-3 text-right">Cajas × Unid.</th>
+                <th class="py-2.5 px-3 text-right">Costo Caja</th>
+                <th class="py-2.5 px-3 text-right">Precio Tienda</th>
+                <th class="py-2.5 px-3 text-right">Subtotal</th>
+                <th class="py-2.5 px-2 text-center w-8"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#E7E0D3]">
+              <tr *ngFor="let it of itemsCompra(); let idx = index" class="hover:bg-[#F5EFE6]">
+                <td class="py-2.5 px-3">
+                  <p class="font-semibold text-[#143628] leading-tight">{{ it.producto_nombre }}</p>
+                  <p class="text-[11px] text-[#52665D] font-mono">{{ it.codigo_barras }} · {{ it.numero_lote }}</p>
+                </td>
+                <td class="py-2.5 px-3 text-right tabular-nums whitespace-nowrap text-[#12261E]">
+                  <span class="font-semibold text-[#143628]">{{ it.cajas_compradas }}</span> × {{ it.unidades_por_caja }} = {{ it.total_unidades }} u.
+                </td>
+                <td class="py-2.5 px-3 text-right tabular-nums whitespace-nowrap text-[#12261E]">
+                  Bs. {{ it.costo_caja.toFixed(2) }}
+                  <span class="block text-[10px] text-[#52665D]">Bs. {{ it.costo_unitario.toFixed(2) }}/u.</span>
+                </td>
+                <td class="py-2.5 px-3 text-right tabular-nums whitespace-nowrap font-semibold text-[#143628]">
+                  Bs. {{ it.precio_venta_normal.toFixed(2) }}
+                  <span class="block text-[10px] text-[#15803D]">+Bs. {{ it.ganancia_unitaria.toFixed(2) }}</span>
+                </td>
+                <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#143628] whitespace-nowrap">
+                  Bs. {{ it.inversion_item.toFixed(2) }}
+                </td>
+                <td class="py-2.5 px-2 text-center">
+                  <button
+                    type="button"
+                    (click)="quitarItem(idx)"
+                    title="Quitar"
+                    class="p-1 rounded text-[#52665D] hover:text-[#DC2626] cursor-pointer">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+
+      <!-- Pie Fijo -->
+      <div class="p-4 border-t border-[#E7E0D3] bg-[#F5EFE6] space-y-3">
+
+        <div class="grid grid-cols-3 gap-2.5 text-xs tabular-nums">
+          <div class="bg-white p-2.5 rounded-md border border-[#E7E0D3]">
+            <span class="text-[11px] font-medium text-[#52665D] block">Total Unidades</span>
+            <span class="text-sm font-bold text-[#143628] mt-0.5 block">{{ totalUnidadesNota() }} u.</span>
+          </div>
+
+          <div class="bg-white p-2.5 rounded-md border border-[#E7E0D3]">
+            <span class="text-[11px] font-medium text-[#52665D] block">Total Inversión</span>
+            <span class="text-sm font-bold text-[#143628] mt-0.5 block">Bs. {{ inversionTotalNota().toFixed(2) }}</span>
+          </div>
+
+          <div class="bg-white p-2.5 rounded-md border border-[#E7E0D3]">
+            <span class="text-[11px] font-medium text-[#52665D] block">Ganancia Proyectada</span>
+            <span class="text-sm font-bold text-[#15803D] mt-0.5 block">+Bs. {{ gananciaTotalNota().toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="guardarCompraEnInventario()"
+          [disabled]="isSaving() || itemsCompra().length === 0"
+          class="w-full py-2.5 px-5 rounded-md font-semibold text-xs text-white bg-[#15803D] hover:bg-[#166534] disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          <span>{{ isSaving() ? 'Guardando...' : 'Confirmar e Ingresar al Inventario' }}</span>
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- 3. HISTORIAL DE LOTES INGRESADOS -->
+  <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+
+    <div class="px-4 py-3 border-b border-[#E7E0D3] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <h2 class="text-sm font-bold text-[#143628]">Historial de Lotes Ingresados</h2>
+
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <select
+          *ngIf="auth.isAdmin()"
+          [ngModel]="filtroHistorialSucursal()"
+          (ngModelChange)="filtroHistorialSucursal.set($event === 'todas' ? 'todas' : Number($event))"
+          class="px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs font-medium text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+          <option value="todas">Todas las Tiendas</option>
+          <option *ngFor="let s of sucursales()" [value]="s.id">
+            {{ s.nombre }}
+          </option>
+        </select>
+
+        <input
+          type="text"
+          [ngModel]="busquedaHistorial()"
+          (ngModelChange)="busquedaHistorial.set($event)"
+          placeholder="Buscar producto, lote o proveedor..."
+          class="px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs text-[#143628] bg-white focus:border-[#E0432D] outline-none w-56" />
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">N° Lote</th>
+            <th class="py-2.5 px-3">Producto</th>
+            <th class="py-2.5 px-3">Tienda</th>
+            <th class="py-2.5 px-3">Proveedor</th>
+            <th class="py-2.5 px-3 text-right">Cajas / Unid.</th>
+            <th class="py-2.5 px-3 text-right">Costo Caja</th>
+            <th class="py-2.5 px-3 text-right">Precio Tienda</th>
+            <th class="py-2.5 px-3">Vencimiento</th>
+            <th class="py-2.5 px-3 text-right">Ingreso</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+
+          <tr *ngIf="historialFiltrado().length === 0">
+            <td colspan="9" class="py-8 px-3 text-center text-[#52665D]">
+              No hay registros de compras.
+            </td>
+          </tr>
+
+          <tr *ngFor="let l of historialFiltrado()" class="hover:bg-[#F5EFE6] transition-colors">
+            <td class="py-2.5 px-3 font-mono font-semibold text-[#143628]">{{ l.numero_lote }}</td>
+            <td class="py-2.5 px-3">
+              <span class="font-semibold text-[#143628]">{{ l.producto_nombre }}</span>
+              <span class="block text-[11px] text-[#52665D] font-mono">{{ l.codigo_barras }}</span>
+            </td>
+            <td class="py-2.5 px-3 text-[#52665D]">{{ l.sucursal_nombre }}</td>
+            <td class="py-2.5 px-3 text-[#52665D]">{{ l.proveedor || 'Local' }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#12261E] whitespace-nowrap">
+              <span class="font-semibold text-[#143628]">{{ l.cajas_compradas }} cj</span>
+              <span class="text-[11px] text-[#52665D]"> ({{ l.stock_actual_unidades }} u.)</span>
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#12261E]">Bs. {{ Number(l.costo_caja).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#143628]">Bs. {{ Number(l.precio_venta_normal).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 font-mono text-[11px] text-[#52665D] tabular-nums">{{ l.fecha_vencimiento | date:'dd/MM/yyyy' }}</td>
+            <td class="py-2.5 px-3 text-right font-mono text-[11px] text-[#52665D] tabular-nums">{{ l.fecha_ingreso | date:'dd/MM/yyyy' }}</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- MODAL NUEVO PRODUCTO RÁPIDO -->
+  <div *ngIf="showModalNuevo()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#143628]/50">
+    <div class="w-full max-w-lg bg-white rounded-lg shadow-sm p-5 border border-[#E7E0D3] space-y-4">
+
+      <div class="flex items-center justify-between pb-3 border-b border-[#E7E0D3]">
+        <h3 class="text-base font-bold text-[#143628]">Nuevo Producto</h3>
+        <button type="button" (click)="cerrarModalNuevoProducto()" class="text-[#52665D] hover:text-[#12261E] p-1 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="nuevoProductoForm" (ngSubmit)="guardarNuevoProducto()" class="space-y-3.5 text-xs">
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Nombre del Producto *</label>
+          <input
+            type="text"
+            formControlName="nombre"
+            placeholder="Ej: Chocolate Sublime 30g"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Código de Barras *</label>
+            <input
+              type="text"
+              formControlName="codigo_barras"
+              placeholder="7771234567"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-mono focus:border-[#E0432D] outline-none" />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Categoría *</label>
+            <select
+              formControlName="categoria_id"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-medium text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+              <option *ngFor="let c of categorias()" [value]="c.id">
+                {{ c.nombre }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Unid. / Caja *</label>
+            <input
+              type="number"
+              formControlName="contenido_por_caja"
+              placeholder="24"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums focus:border-[#E0432D] outline-none" />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Precio Venta (Bs.) *</label>
+            <input
+              type="number"
+              step="0.10"
+              formControlName="precio_venta_normal"
+              placeholder="5.00"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums focus:border-[#E0432D] outline-none" />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Stock Mín.</label>
+            <input
+              type="number"
+              formControlName="stock_minimo_alerta"
+              placeholder="10"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums focus:border-[#E0432D] outline-none" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#E7E0D3]">
+          <button
+            type="button"
+            (click)="cerrarModalNuevoProducto()"
+            class="px-3.5 py-2 rounded-md text-xs font-semibold text-[#52665D] bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] cursor-pointer">
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="isLoading() || nuevoProductoForm.invalid"
+            class="px-4 py-2 rounded-md font-semibold text-xs text-white bg-[#E0432D] hover:bg-[#C43420] disabled:opacity-50 cursor-pointer">
+            {{ isLoading() ? 'Guardando...' : 'Crear Producto' }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>

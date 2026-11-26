@@ -1,0 +1,242 @@
+<div class="space-y-4">
+
+  <!-- HEADER -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Arqueo de Caja</h1>
+
+    <div class="bg-white px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs font-semibold text-[#143628]">
+      {{ auth.currentSucursal() }}
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div *ngIf="feedbackMessage()"
+    [ngClass]="feedbackMessage()?.type === 'success' ? 'bg-white text-[#15803D] border-[#15803D]' : 'bg-white text-[#DC2626] border-[#DC2626]'"
+    class="px-3.5 py-2.5 rounded-md border text-xs font-semibold flex items-center justify-between">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="text-[#52665D] hover:text-[#12261E] p-0.5 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- CASO 1: CAJA CERRADA -> APERTURA -->
+  <div *ngIf="!cajaActiva()" class="bg-white rounded-lg p-5 border border-[#E7E0D3] shadow-xs space-y-4 max-w-xl">
+    <h2 class="text-sm font-bold text-[#143628] pb-2.5 border-b border-[#E7E0D3]">Apertura de Turno</h2>
+
+    <div class="p-3.5 rounded-md bg-[#F5EFE6] border border-[#E7E0D3] text-xs space-y-1">
+      <div class="flex items-center justify-between">
+        <span class="font-semibold text-[#52665D]">Saldo del cierre anterior:</span>
+        <span class="text-sm font-bold text-[#143628] tabular-nums">
+          Bs. {{ Number(saldoAnteriorSugerido()).toFixed(2) }}
+        </span>
+      </div>
+      <p class="text-[11px] text-[#52665D]">
+        {{ existeCierreAnterior() ? 'Efectivo registrado al cierre del turno previo.' : 'Sin cierres previos en esta sucursal.' }}
+      </p>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-semibold text-[#12261E] mb-1">Fondo Inicial en Efectivo (Bs.) *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-2 text-[#52665D]">Bs.</span>
+          <input
+            type="number"
+            step="0.50"
+            min="0"
+            [ngModel]="montoAperturaInput()"
+            (ngModelChange)="montoAperturaInput.set($any($event))"
+            class="w-full pl-9 pr-3 py-2 rounded-md border border-[#E7E0D3] text-sm font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#12261E] mb-1">Observaciones</label>
+        <input
+          type="text"
+          [ngModel]="observacionesApertura()"
+          (ngModelChange)="observacionesApertura.set($event)"
+          placeholder="Opcional"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none"
+        />
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button
+          type="button"
+          (click)="abrirTurno()"
+          [disabled]="isLoading() || montoAperturaInput() < 0"
+          class="px-5 py-2.5 rounded-md font-semibold text-xs text-white bg-[#E0432D] hover:bg-[#C43420] disabled:opacity-50 transition-colors cursor-pointer">
+          {{ isLoading() ? 'Abriendo...' : 'Abrir Caja' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASO 2: CAJA ABIERTA -> ARQUEO Y CIERRE -->
+  <div *ngIf="cajaActiva()" class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+    <!-- RESUMEN DE CAJA (7 cols) -->
+    <div class="lg:col-span-7 bg-white rounded-lg p-5 border border-[#E7E0D3] shadow-xs space-y-4">
+      <div class="flex items-center justify-between border-b border-[#E7E0D3] pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#15803D]"></span>
+          <h2 class="text-sm font-bold text-[#143628]">Resumen del Turno</h2>
+        </div>
+        <span class="text-xs text-[#52665D]">Cajero: {{ cajaActiva()?.cajero_nombre }}</span>
+      </div>
+
+      <div class="bg-[#F5EFE6] p-4 rounded-md border border-[#E7E0D3] space-y-2.5 text-xs tabular-nums">
+        <div class="flex items-center justify-between text-[#12261E]">
+          <span>Fondo de apertura:</span>
+          <span class="font-semibold text-[#143628]">Bs. {{ Number(cajaActiva()?.monto_apertura).toFixed(2) }}</span>
+        </div>
+
+        <div class="flex items-center justify-between text-[#15803D]">
+          <span>+ Ventas en efectivo:</span>
+          <span class="font-semibold">+Bs. {{ Number(cajaActiva()?.total_ventas_efectivo).toFixed(2) }}</span>
+        </div>
+
+        <div *ngIf="Number(cajaActiva()?.total_ingresos_extra || 0) > 0" class="flex items-center justify-between text-[#15803D]">
+          <span>+ Ingresos extra en caja:</span>
+          <span class="font-semibold">+Bs. {{ Number(cajaActiva()?.total_ingresos_extra).toFixed(2) }}</span>
+        </div>
+
+        <div class="flex items-center justify-between text-[#DC2626]">
+          <span>- Egresos de caja:</span>
+          <span class="font-semibold">-Bs. {{ Number(cajaActiva()?.total_gastos).toFixed(2) }}</span>
+        </div>
+
+        <div class="flex items-center justify-between pt-2.5 border-t border-[#E7E0D3] text-sm font-bold text-[#143628]">
+          <span>Efectivo esperado en caja:</span>
+          <span class="text-lg">Bs. {{ efectivoEsperado().toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 text-xs tabular-nums">
+        <div class="bg-white p-3 rounded-md border border-[#E7E0D3]">
+          <p class="text-[11px] font-medium text-[#52665D]">Ventas por QR</p>
+          <p class="text-base font-bold text-[#143628] mt-0.5">Bs. {{ Number(cajaActiva()?.total_ventas_qr).toFixed(2) }}</p>
+        </div>
+
+        <div class="bg-white p-3 rounded-md border border-[#E7E0D3]">
+          <p class="text-[11px] font-medium text-[#52665D]">Operaciones</p>
+          <p class="text-base font-bold text-[#143628] mt-0.5">{{ cajaActiva()?.total_transacciones_ventas }} ventas · {{ cajaActiva()?.total_registros_gastos }} egresos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CIERRE DE TURNO (5 cols) -->
+    <div class="lg:col-span-5 bg-white rounded-lg p-5 border border-[#E7E0D3] shadow-xs space-y-4">
+      <h2 class="text-sm font-bold text-[#143628] pb-2.5 border-b border-[#E7E0D3]">Cierre de Turno</h2>
+
+      <div class="text-xs">
+        <label class="block font-semibold text-[#12261E] mb-1">Efectivo Contado (Bs.) *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-2.5 text-[#52665D]">Bs.</span>
+          <input
+            type="number"
+            step="0.50"
+            min="0"
+            [ngModel]="efectivoFisicoContado()"
+            (ngModelChange)="efectivoFisicoContado.set($any($event))"
+            class="w-full pl-9 pr-3 py-2.5 rounded-md border border-[#E7E0D3] text-base font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none"
+          />
+        </div>
+      </div>
+
+      <div
+        [ngClass]="{
+          'border-[#15803D] text-[#15803D]': cuadraExacto(),
+          'border-[#D97706] text-[#D97706]': esSobrante(),
+          'border-[#DC2626] text-[#DC2626]': esFaltante()
+        }"
+        class="p-3 rounded-md border bg-[#F5EFE6] space-y-1 text-xs tabular-nums">
+        <div class="flex items-center justify-between font-bold">
+          <span>
+            {{ cuadraExacto() ? 'Cuadre exacto' : (esSobrante() ? 'Sobrante (+)' : 'Faltante (-)') }}
+          </span>
+          <span>
+            {{ diferenciaCierre() >= 0 ? '+Bs. ' + diferenciaCierre().toFixed(2) : '-Bs. ' + Math.abs(diferenciaCierre()).toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="text-xs">
+        <label class="block font-semibold text-[#12261E] mb-1">Observaciones</label>
+        <input
+          type="text"
+          [ngModel]="observacionesCierre()"
+          (ngModelChange)="observacionesCierre.set($event)"
+          placeholder="Sin novedades"
+          class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none"
+        />
+      </div>
+
+      <button
+        type="button"
+        (click)="cerrarTurno()"
+        [disabled]="isLoading() || efectivoFisicoContado() < 0"
+        class="w-full py-2.5 px-4 rounded-md font-semibold text-xs text-white bg-[#E0432D] hover:bg-[#C43420] disabled:opacity-50 transition-colors cursor-pointer">
+        {{ isLoading() ? 'Cerrando...' : 'Confirmar Cierre de Caja' }}
+      </button>
+    </div>
+
+  </div>
+
+  <!-- HISTORIAL DE ARQUEOS -->
+  <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+    <div class="px-4 py-3 border-b border-[#E7E0D3] flex items-center justify-between">
+      <h2 class="text-sm font-bold text-[#143628]">Historial de Cierres</h2>
+      <span class="text-xs text-[#52665D] tabular-nums">{{ historial().length }} registro(s)</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">Cajero / Tienda</th>
+            <th class="py-2.5 px-3 text-right">Apertura</th>
+            <th class="py-2.5 px-3 text-right">Ventas Ef.</th>
+            <th class="py-2.5 px-3 text-right">Gastos</th>
+            <th class="py-2.5 px-3 text-right">Esperado</th>
+            <th class="py-2.5 px-3 text-right">Contado</th>
+            <th class="py-2.5 px-3 text-right">Diferencia</th>
+            <th class="py-2.5 px-3 text-right">Cierre</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+          <tr *ngIf="historial().length === 0">
+            <td colspan="8" class="py-10 px-3 text-center text-[#52665D]">
+              No hay cierres registrados.
+            </td>
+          </tr>
+
+          <tr *ngFor="let h of historial()" class="hover:bg-[#F5EFE6] transition-colors">
+            <td class="py-2.5 px-3">
+              <p class="font-semibold text-[#143628]">{{ h.cajero_nombre }}</p>
+              <p class="text-[11px] text-[#52665D]">{{ h.sucursal_nombre }}</p>
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#12261E]">Bs. {{ Number(h.monto_apertura).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#15803D]">+Bs. {{ Number(h.total_ventas_efectivo).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#DC2626]">-Bs. {{ Number(h.total_gastos).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#143628]">Bs. {{ Number(h.monto_cierre_sistema).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#143628]">Bs. {{ Number(h.monto_cierre_real).toFixed(2) }}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold">
+              <span *ngIf="Math.abs(Number(h.diferencia)) < 0.01" class="text-[#15803D]">Exacto</span>
+              <span *ngIf="Number(h.diferencia) > 0.01" class="text-[#D97706]">+Bs. {{ Number(h.diferencia).toFixed(2) }}</span>
+              <span *ngIf="Number(h.diferencia) < -0.01" class="text-[#DC2626]">-Bs. {{ Math.abs(Number(h.diferencia)).toFixed(2) }}</span>
+            </td>
+            <td class="py-2.5 px-3 text-right font-mono text-[11px] text-[#52665D] tabular-nums whitespace-nowrap">
+              {{ h.fecha_cierre | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

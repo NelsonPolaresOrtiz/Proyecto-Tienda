@@ -1,0 +1,274 @@
+<div class="space-y-4">
+
+  <!-- HEADER -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Personal y Cajeros</h1>
+
+    <button
+      *ngIf="tabActiva() === 'personal'"
+      (click)="openCreateModal()"
+      type="button"
+      class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md font-semibold text-xs text-white bg-[#E0432D] hover:bg-[#C43420] transition-colors cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      <span>Nuevo Usuario</span>
+    </button>
+  </div>
+
+  <!-- PESTAÑAS -->
+  <div class="flex items-center gap-2 border-b border-[#E7E0D3]">
+    <button
+      type="button"
+      (click)="abrirTabPersonal()"
+      [ngClass]="tabActiva() === 'personal' ? 'border-[#E0432D] text-[#143628] font-bold' : 'border-transparent text-[#52665D] hover:text-[#12261E] font-medium'"
+      class="px-3.5 py-2 border-b-2 text-xs transition-colors inline-flex items-center gap-2 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <span>Personal ({{ usuarios().length }})</span>
+    </button>
+
+    <button
+      type="button"
+      (click)="abrirTabAuditoriaGeneral()"
+      [ngClass]="tabActiva() === 'auditoria' ? 'border-[#E0432D] text-[#143628] font-bold' : 'border-transparent text-[#52665D] hover:text-[#12261E] font-medium'"
+      class="px-3.5 py-2 border-b-2 text-xs transition-colors inline-flex items-center gap-2 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span>Auditoría</span>
+    </button>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div *ngIf="feedbackMessage()"
+    [ngClass]="feedbackMessage()?.type === 'success' ? 'bg-white text-[#15803D] border-[#15803D]' : 'bg-white text-[#DC2626] border-[#DC2626]'"
+    class="px-3.5 py-2.5 rounded-md border text-xs font-semibold flex items-center justify-between">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="text-[#52665D] hover:text-[#12261E] p-0.5 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- TABLA DE USUARIOS -->
+  <div *ngIf="tabActiva() === 'personal'" class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">Nombre</th>
+            <th class="py-2.5 px-3">Correo / CI</th>
+            <th class="py-2.5 px-3">WhatsApp</th>
+            <th class="py-2.5 px-3">Rol</th>
+            <th class="py-2.5 px-3">Sucursal</th>
+            <th class="py-2.5 px-3">Último Acceso</th>
+            <th class="py-2.5 px-3">Estado</th>
+            <th class="py-2.5 px-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+          <tr *ngFor="let u of usuarios()" class="hover:bg-[#F5EFE6] transition-colors">
+
+            <td class="py-2.5 px-3">
+              <div class="flex items-center gap-2.5">
+                <div
+                  [ngClass]="u.rol === 'admin' ? 'bg-[#143628] text-white' : 'bg-[#F5EFE6] text-[#143628] border border-[#E7E0D3]'"
+                  class="w-7 h-7 rounded-full font-bold flex items-center justify-center text-[11px] shrink-0">
+                  {{ getInitials(u.nombre) }}
+                </div>
+                <p class="font-semibold text-[#143628]">{{ u.nombre }}</p>
+              </div>
+            </td>
+
+            <td class="py-2.5 px-3">
+              <p class="font-mono text-[#12261E]">{{ u.email }}</p>
+              <p class="text-[11px] text-[#52665D] tabular-nums">CI: {{ u.ci || '—' }}</p>
+            </td>
+
+            <td class="py-2.5 px-3 tabular-nums font-mono">
+              <span *ngIf="u.telefono" class="text-[#143628] font-medium">
+                {{ u.telefono }}
+              </span>
+              <span *ngIf="!u.telefono" class="text-[#52665D]">—</span>
+            </td>
+
+            <td class="py-2.5 px-3">
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold border border-[#E7E0D3] bg-[#F5EFE6] text-[#143628]">
+                {{ u.rol === 'admin' ? 'Administrador' : 'Cajero' }}
+              </span>
+            </td>
+
+            <td class="py-2.5 px-3 text-[#12261E] font-medium">
+              <span *ngIf="u.rol === 'admin'" class="text-[#52665D]">Todas las tiendas</span>
+              <span *ngIf="u.rol === 'vendedor'">{{ u.sucursal_nombre || 'Sin sucursal' }}</span>
+            </td>
+
+            <td class="py-2.5 px-3 font-mono text-[11px] text-[#52665D] tabular-nums">
+              {{ u.ultimo_login ? (u.ultimo_login | date:'dd/MM/yyyy HH:mm') : 'Sin ingresos' }}
+            </td>
+
+            <td class="py-2.5 px-3">
+              <button
+                (click)="toggleStatus(u)"
+                [ngClass]="u.estado === 'activo' ? 'text-[#15803D] border-[#15803D]/30 bg-[#F5EFE6]' : 'text-[#52665D] border-[#E7E0D3] bg-[#F5EFE6]'"
+                class="px-2 py-0.5 rounded text-[11px] font-semibold border inline-flex items-center gap-1.5 cursor-pointer">
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="u.estado === 'activo' ? 'bg-[#15803D]' : 'bg-[#52665D]'"></span>
+                {{ u.estado === 'activo' ? 'Activo' : 'Inactivo' }}
+              </button>
+            </td>
+
+            <td class="py-2.5 px-3 text-right whitespace-nowrap space-x-1.5">
+              <button
+                (click)="verAuditoriaUsuario(u)"
+                type="button"
+                class="px-2.5 py-1 rounded-md bg-white hover:bg-[#F5EFE6] text-[#12261E] text-xs font-semibold border border-[#E7E0D3] inline-flex items-center gap-1 cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>Auditoría</span>
+              </button>
+
+              <button
+                (click)="openEditModal(u)"
+                type="button"
+                class="px-2.5 py-1 rounded-md bg-white hover:bg-[#F5EFE6] text-[#12261E] text-xs font-semibold border border-[#E7E0D3] inline-flex items-center gap-1 cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                </svg>
+                <span>Editar</span>
+              </button>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB AUDITORÍA -->
+  <div *ngIf="tabActiva() === 'auditoria'">
+    <app-auditoria [embedded]="true" [presetUserId]="auditUserId()"></app-auditoria>
+  </div>
+
+  <!-- MODAL USUARIO -->
+  <div *ngIf="showModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#143628]/50">
+    <div class="w-full max-w-lg bg-white rounded-lg shadow-sm p-5 border border-[#E7E0D3]">
+
+      <div class="flex items-center justify-between pb-3 border-b border-[#E7E0D3] mb-4">
+        <h3 class="text-base font-bold text-[#143628]">
+          {{ editingUser() ? 'Editar Usuario' : 'Nuevo Usuario' }}
+        </h3>
+        <button type="button" (click)="closeModal()" class="text-[#52665D] hover:text-[#12261E] p-1 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-3.5 text-xs">
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Nombre Completo *</label>
+          <input
+            type="text"
+            formControlName="nombre"
+            placeholder="Ej: Marcelo Condori Huanca"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] focus:outline-none"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Correo Electrónico *</label>
+            <input
+              type="email"
+              formControlName="email"
+              placeholder="cajero@candyboom.bo"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">
+              Contraseña {{ editingUser() ? '(Opcional)' : '*' }}
+            </label>
+            <input
+              type="password"
+              formControlName="password"
+              placeholder="••••••••"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Rol *</label>
+            <select formControlName="rol" class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold focus:border-[#E0432D] focus:outline-none bg-white">
+              <option value="vendedor">Cajero / Vendedor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">
+              Sucursal {{ form.get('rol')?.value === 'vendedor' ? '*' : '(N/A)' }}
+            </label>
+            <select
+              formControlName="sucursal_id"
+              [disabled]="form.get('rol')?.value === 'admin'"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] focus:outline-none bg-white disabled:bg-[#F5EFE6] disabled:text-[#52665D]">
+              <option *ngFor="let s of sucursales()" [value]="s.id">
+                {{ s.nombre }} ({{ s.codigo }})
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">C.I.</label>
+            <input
+              type="text"
+              formControlName="ci"
+              placeholder="Ej: 6849201 CH"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">WhatsApp (+591...)</label>
+            <input
+              type="text"
+              formControlName="telefono"
+              placeholder="+59177234567"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-mono focus:border-[#E0432D] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#E7E0D3]">
+          <button
+            type="button"
+            (click)="closeModal()"
+            class="px-3.5 py-2 rounded-md font-semibold text-[#52665D] bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] cursor-pointer">
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="isLoading()"
+            class="px-4 py-2 rounded-md font-semibold text-white bg-[#E0432D] hover:bg-[#C43420] cursor-pointer disabled:opacity-50">
+            {{ isLoading() ? 'Guardando...' : (editingUser() ? 'Guardar Cambios' : 'Crear Usuario') }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>

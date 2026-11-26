@@ -1,0 +1,42 @@
+<div
+  *ngIf="transition.state().active"
+  (click)="transition.skipOrAccelerate()"
+  [ngClass]="transition.isExiting() ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'"
+  class="fixed inset-0 z-[100] bg-[#143628] flex flex-col items-center justify-center px-6 overflow-hidden transition-all duration-500 ease-out select-none cursor-pointer overlay-expand-center">
+
+  <!-- Contenedor Central -->
+  <div class="relative z-10 flex flex-col items-center text-center max-w-md w-full">
+
+    <!-- Logotipo Candy Boom -->
+    <div class="w-24 h-24 rounded-lg bg-white p-3 border border-[#E7E0D3] flex items-center justify-center mb-6 logo-pop-scale">
+      <img
+        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUqPzqsm7tJ63hm4gjhQrAFgglvGWhuuSIO9uFPP61bqkJVavDaLVnNMwGvJvp_podWd28SCe7SiXSnpzTcfrEVwrnn5EaooYgbuNpscxo2VrjQ-VRuXzSCE6m2tmOKFc_O0XKE3dGyyIKBtPTVjFqu4pkwEErUAGJXT7rMKarAA_yUN_1_y4aqKGfxCh1yJwmAguWdTpt-n6-ZWRox0gHVjl5q7rdsP5pfLySiMNQ"
+        alt="Candy Boom"
+        class="w-full h-full object-contain" />
+    </div>
+
+    <!-- Saludo Corporativo -->
+    <h2 class="text-2xl sm:text-3xl font-extrabold text-[#FBF8F3] tracking-tight leading-tight">
+      Bienvenido, {{ transition.state().userName }}
+    </h2>
+
+    <p class="text-xs sm:text-sm text-[#FBF8F3]/75 font-medium mt-2 tracking-wide">
+      Candy Boom · {{ transition.state().sucursalLabel }}
+    </p>
+
+    <!-- Barra de progreso minimalista Rojo Tomate (#E0432D) -->
+    <div class="w-64 h-1.5 bg-[#1E4D3B] rounded-full overflow-hidden mt-8 border border-[#1E4D3B]">
+      <div
+        [style.width.%]="transition.progress()"
+        [ngClass]="transition.isAccelerated() ? 'duration-150' : 'duration-[1800ms]'"
+        class="h-full bg-[#E0432D] rounded-full transition-[width] ease-out">
+      </div>
+    </div>
+
+    <p class="text-[11px] text-[#FBF8F3]/60 mt-5 font-medium tracking-wide">
+      Haz clic o presiona Enter para continuar
+    </p>
+
+  </div>
+
+</div>

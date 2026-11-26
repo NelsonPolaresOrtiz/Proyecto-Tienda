@@ -1,0 +1,283 @@
+<div class="space-y-4">
+
+  <!-- CABECERA PRINCIPAL -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Panel Principal</h1>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-md border border-[#E7E0D3]">
+        <svg class="w-4 h-4 text-[#52665D] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>
+        </svg>
+        <select
+          [ngModel]="sucursalSeleccionada()"
+          (ngModelChange)="onSucursalChange($event)"
+          class="bg-transparent text-xs font-semibold text-[#143628] focus:outline-none cursor-pointer pr-1">
+          <option value="todas">Todas las Tiendas (Consolidado)</option>
+          <option *ngFor="let s of sucursales()" [value]="s.id">
+            {{ s.nombre }} ({{ s.codigo }})
+          </option>
+        </select>
+      </div>
+
+      <button
+        type="button"
+        (click)="loadDashboardData()"
+        [disabled]="isLoading()"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#E7E0D3] bg-white hover:bg-[#F5EFE6] text-[#12261E] text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+        title="Actualizar">
+        <svg class="w-3.5 h-3.5 text-[#52665D]" [class.animate-spin]="isLoading()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+        </svg>
+        <span>Actualizar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TARJETAS KPI -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
+    <!-- 1. VENTAS TOTALES -->
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Ventas Totales</span>
+        <svg class="w-4 h-4 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#143628] mt-1.5 tabular-nums">Bs. {{ kpis().ventasTotales | number:'1.2-2' }}</p>
+      <div class="mt-2 flex items-center justify-between text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 tabular-nums">
+        <span>{{ kpis().totalTransacciones }} tickets</span>
+        <span>Prom: Bs. {{ kpis().ticketPromedio | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <!-- 2. TOTAL EFECTIVO -->
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Efectivo</span>
+        <svg class="w-4 h-4 text-[#15803D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#15803D] mt-1.5 tabular-nums">Bs. {{ kpis().totalEfectivo | number:'1.2-2' }}</p>
+      <div class="mt-2 flex items-center justify-between text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 tabular-nums">
+        <span>Caja Física</span>
+        <span class="font-semibold text-[#15803D]">
+          {{ kpis().ventasTotales > 0 ? (kpis().totalEfectivo / kpis().ventasTotales * 100 | number:'1.0-0') : 0 }}%
+        </span>
+      </div>
+    </div>
+
+    <!-- 3. TOTAL QR SIMPLE -->
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">QR Simple</span>
+        <svg class="w-4 h-4 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#143628] mt-1.5 tabular-nums">Bs. {{ kpis().totalQR | number:'1.2-2' }}</p>
+      <div class="mt-2 flex items-center justify-between text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 tabular-nums">
+        <span>Cobro Digital</span>
+        <span class="font-semibold text-[#12261E]">
+          {{ kpis().ventasTotales > 0 ? (kpis().totalQR / kpis().ventasTotales * 100 | number:'1.0-0') : 0 }}%
+        </span>
+      </div>
+    </div>
+
+    <!-- 4. GASTOS OPERATIVOS -->
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Gastos Operativos</span>
+        <svg class="w-4 h-4 text-[#DC2626]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#DC2626] mt-1.5 tabular-nums">Bs. {{ kpis().gastosOperativos | number:'1.2-2' }}</p>
+      <div class="mt-2 flex items-center justify-between text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 tabular-nums">
+        <span>Caja: Bs. {{ kpis().gastosEfectivo | number:'1.0-0' }}</span>
+        <span>QR: Bs. {{ kpis().gastosTransferencia | number:'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- 5. UTILIDAD NETA -->
+    <div
+      [ngClass]="kpis().utilidadNeta >= 0 ? 'border-l-4 border-l-[#15803D]' : 'border-l-4 border-l-[#DC2626]'"
+      class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Utilidad Neta</span>
+        <svg class="w-4 h-4" [ngClass]="kpis().utilidadNeta >= 0 ? 'text-[#15803D]' : 'text-[#DC2626]'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold mt-1.5 tabular-nums" [ngClass]="kpis().utilidadNeta >= 0 ? 'text-[#15803D]' : 'text-[#DC2626]'">
+        Bs. {{ kpis().utilidadNeta | number:'1.2-2' }}
+      </p>
+      <div class="mt-2 flex items-center justify-between text-[11px] text-[#52665D] border-t border-[#E7E0D3] pt-2 tabular-nums">
+        <span>Margen</span>
+        <span class="font-semibold text-[#143628]">{{ kpis().margenUtilidad }}%</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- GRÁFICOS -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- GRÁFICO 1: EVOLUCIÓN DE VENTAS -->
+    <div class="lg:col-span-2 bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs space-y-3">
+      <div class="flex items-center justify-between border-b border-[#E7E0D3] pb-2.5">
+        <h2 class="text-sm font-bold text-[#143628]">Ventas por Día (Bs.)</h2>
+        <span class="text-[11px] font-medium text-[#52665D]">Últimos 14 días</span>
+      </div>
+
+      <div class="relative h-64 w-full">
+        <canvas #ventasChart></canvas>
+      </div>
+    </div>
+
+    <!-- GRÁFICO 2: MÉTODOS DE PAGO -->
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs space-y-3 flex flex-col justify-between">
+      <div class="flex items-center justify-between border-b border-[#E7E0D3] pb-2.5">
+        <h2 class="text-sm font-bold text-[#143628]">Métodos de Pago</h2>
+        <span class="text-[11px] font-medium text-[#52665D]">Bs.</span>
+      </div>
+
+      <div class="relative h-48 w-full flex items-center justify-center">
+        <canvas #pagosChart></canvas>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#E7E0D3] tabular-nums">
+        <div class="px-2.5 py-2 rounded-md bg-[#F5EFE6] border border-[#E7E0D3]">
+          <p class="text-[11px] font-medium text-[#52665D]">Efectivo</p>
+          <p class="text-xs font-bold text-[#15803D] mt-0.5">Bs. {{ kpis().totalEfectivo | number:'1.2-2' }}</p>
+        </div>
+        <div class="px-2.5 py-2 rounded-md bg-[#F5EFE6] border border-[#E7E0D3]">
+          <p class="text-[11px] font-medium text-[#52665D]">QR Simple</p>
+          <p class="text-xs font-bold text-[#143628] mt-0.5">Bs. {{ kpis().totalQR | number:'1.2-2' }}</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLAS OPERATIVAS: TOP PRODUCTOS Y ALERTAS -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- TOP PRODUCTOS MÁS VENDIDOS -->
+    <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+      <div class="px-4 py-3 border-b border-[#E7E0D3] flex items-center justify-between">
+        <h2 class="text-sm font-bold text-[#143628]">Productos Más Vendidos</h2>
+        <span class="text-[11px] text-[#52665D] tabular-nums">{{ topProductos().length }} ítems</span>
+      </div>
+
+      <div *ngIf="topProductos().length === 0" class="py-8 text-center text-[#52665D] text-xs">
+        Sin ventas registradas.
+      </div>
+
+      <table *ngIf="topProductos().length > 0" class="w-full text-xs text-left">
+        <thead class="bg-[#F5EFE6] text-[#52665D] font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">Producto</th>
+            <th class="py-2.5 px-3 text-right">Unid.</th>
+            <th class="py-2.5 px-3 text-right">Ingresos</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+          <tr *ngFor="let p of topProductos(); let idx = index" class="hover:bg-[#F5EFE6]">
+            <td class="py-2.5 px-3">
+              <p class="font-semibold text-[#143628] truncate max-w-[150px]">{{ idx + 1 }}. {{ p.nombre }}</p>
+              <span class="text-[11px] text-[#52665D]">{{ p.categoria }}</span>
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-[#52665D] font-medium">
+              {{ p.unidades_vendidas }}
+            </td>
+            <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#143628]">
+              Bs. {{ Number(p.ingresos_totales).toFixed(2) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ALERTAS DE VENCIMIENTO -->
+    <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+      <div class="px-4 py-3 border-b border-[#E7E0D3] flex items-center justify-between">
+        <h2 class="text-sm font-bold text-[#143628]">Próximos a Vencer</h2>
+        <span class="text-[11px] font-semibold text-[#DC2626] tabular-nums">{{ alertasVencimiento().length }} alertas</span>
+      </div>
+
+      <div *ngIf="alertasVencimiento().length === 0" class="py-8 text-center text-[#15803D] text-xs font-medium">
+        Sin lotes próximos a vencer en 30 días.
+      </div>
+
+      <div *ngIf="alertasVencimiento().length > 0" class="max-h-72 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-[#F5EFE6] text-[#52665D] font-semibold border-b border-[#E7E0D3]">
+            <tr>
+              <th class="py-2.5 px-3">Producto / Lote</th>
+              <th class="py-2.5 px-3 text-right">Stock</th>
+              <th class="py-2.5 px-3 text-right">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#E7E0D3]">
+            <tr *ngFor="let a of alertasVencimiento()" class="hover:bg-[#F5EFE6]">
+              <td class="py-2.5 px-3">
+                <p class="font-semibold text-[#143628] truncate max-w-[150px]">{{ a.producto_nombre }}</p>
+                <span class="text-[11px] text-[#52665D]">{{ a.numero_lote }} · {{ a.sucursal_nombre }}</span>
+              </td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#12261E]">
+                {{ a.stock_actual_unidades }} u.
+              </td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-bold"
+                [ngClass]="a.dias_para_vencer <= 0 ? 'text-[#DC2626]' : 'text-[#D97706]'">
+                {{ a.dias_para_vencer <= 0 ? 'Vencido' : a.dias_para_vencer + ' d' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ALERTAS DE STOCK BAJO -->
+    <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+      <div class="px-4 py-3 border-b border-[#E7E0D3] flex items-center justify-between">
+        <h2 class="text-sm font-bold text-[#143628]">Stock Bajo</h2>
+        <span class="text-[11px] font-semibold text-[#DC2626] tabular-nums">{{ alertasStock().length }} ítems</span>
+      </div>
+
+      <div *ngIf="alertasStock().length === 0" class="py-8 text-center text-[#15803D] text-xs font-medium">
+        Niveles de stock en orden.
+      </div>
+
+      <div *ngIf="alertasStock().length > 0" class="max-h-72 overflow-y-auto">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-[#F5EFE6] text-[#52665D] font-semibold border-b border-[#E7E0D3]">
+            <tr>
+              <th class="py-2.5 px-3">Producto</th>
+              <th class="py-2.5 px-3 text-right">Stock / Mín.</th>
+              <th class="py-2.5 px-3 text-right">Precio</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#E7E0D3]">
+            <tr *ngFor="let s of alertasStock()" class="hover:bg-[#F5EFE6]">
+              <td class="py-2.5 px-3">
+                <p class="font-semibold text-[#143628] truncate max-w-[150px]">{{ s.producto_nombre }}</p>
+                <span class="text-[11px] text-[#52665D]">{{ s.sucursal_nombre }}</span>
+              </td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#DC2626]">
+                {{ s.stock_total_unidades }} / {{ s.stock_minimo_alerta }}
+              </td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-[#12261E]">
+                Bs. {{ Number(s.precio_venta_normal).toFixed(2) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>

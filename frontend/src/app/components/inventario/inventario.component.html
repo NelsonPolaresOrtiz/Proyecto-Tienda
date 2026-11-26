@@ -1,0 +1,675 @@
+<div class="space-y-4">
+
+  <!-- HEADER -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Inventario</h1>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <div *ngIf="auth.isAdmin()" class="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-md border border-[#E7E0D3]">
+        <svg class="w-4 h-4 text-[#52665D] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>
+        </svg>
+        <select
+          (change)="onSucursalChange($any($event.target).value)"
+          class="bg-transparent text-xs font-semibold text-[#143628] focus:outline-none cursor-pointer">
+          <option *ngFor="let s of sucursales()" [value]="s.id" [selected]="s.id === selectedSucursalId()">
+            {{ s.nombre }} ({{ s.codigo }})
+          </option>
+        </select>
+      </div>
+
+      <div *ngIf="!auth.isAdmin()" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs font-semibold text-[#143628]">
+        <span>{{ auth.currentSucursal() }}</span>
+      </div>
+
+      <button
+        (click)="goToCompras()"
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold bg-white hover:bg-[#F5EFE6] text-[#12261E] border border-[#E7E0D3] transition-colors cursor-pointer">
+        <svg class="w-3.5 h-3.5 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Registrar Compra</span>
+      </button>
+
+      <button
+        (click)="openModalNuevoProducto()"
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold bg-[#E0432D] hover:bg-[#C43420] text-white transition-colors cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Nuevo Producto</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div *ngIf="feedbackMessage()"
+    [ngClass]="feedbackMessage()?.type === 'success' ? 'bg-white text-[#15803D] border-[#15803D]' : 'bg-white text-[#DC2626] border-[#DC2626]'"
+    class="px-3.5 py-2.5 rounded-md border text-xs font-semibold flex items-center justify-between">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="text-[#52665D] hover:text-[#12261E] p-0.5 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- KPI -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Productos</span>
+        <svg class="w-4 h-4 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#143628] mt-1 tabular-nums">{{ kpis().totalProductos }}</p>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Capital Invertido</span>
+        <svg class="w-4 h-4 text-[#15803D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#15803D] mt-1 tabular-nums">Bs. {{ Number(kpis().capitalInvertido).toFixed(2) }}</p>
+    </div>
+
+    <div
+      (click)="setEstadoFiltro(estadoFiltro() === 'stock_bajo' ? 'todos' : 'stock_bajo')"
+      [ngClass]="estadoFiltro() === 'stock_bajo' ? 'border-[#DC2626]' : 'border-[#E7E0D3]'"
+      class="bg-white p-4 rounded-lg border shadow-xs cursor-pointer hover:bg-[#F5EFE6]/70 transition-colors">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Stock Bajo</span>
+        <svg class="w-4 h-4 text-[#DC2626]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#DC2626] mt-1 tabular-nums">{{ kpis().alertasStockBajo }}</p>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Por Vencer (30d)</span>
+        <svg class="w-4 h-4 text-[#DC2626]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#DC2626] mt-1 tabular-nums">{{ kpis().lotesPorVencer }}</p>
+    </div>
+  </div>
+
+  <!-- BÚSQUEDA Y FILTROS -->
+  <div class="bg-white p-3.5 rounded-lg border border-[#E7E0D3] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+    <div class="relative flex-1">
+      <svg class="w-4 h-4 text-[#52665D] absolute left-3 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event); onSearchChange()"
+        placeholder="Buscar por nombre o código de barras..."
+        class="w-full pl-9 pr-3 py-2 rounded-md border border-[#E7E0D3] text-xs text-[#143628] focus:outline-none focus:border-[#E0432D] bg-white" />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <select
+        (change)="onCategoriaChange($any($event.target).value)"
+        class="px-3 py-2 rounded-md border border-[#E7E0D3] text-xs font-medium text-[#143628] bg-white focus:outline-none focus:border-[#E0432D]">
+        <option value="">Todas las categorías</option>
+        <option *ngFor="let cat of categorias()" [value]="cat.id">
+          {{ cat.nombre }}
+        </option>
+      </select>
+
+      <button
+        type="button"
+        (click)="setEstadoFiltro('todos')"
+        [ngClass]="estadoFiltro() === 'todos' ? 'bg-[#143628] text-white border-[#143628]' : 'bg-white text-[#12261E] border-[#E7E0D3] hover:bg-[#F5EFE6]'"
+        class="px-3 py-2 rounded-md border text-xs font-semibold transition-colors cursor-pointer">
+        Todos
+      </button>
+
+      <button
+        type="button"
+        (click)="setEstadoFiltro('stock_bajo')"
+        [ngClass]="estadoFiltro() === 'stock_bajo' ? 'bg-[#DC2626] text-white border-[#DC2626]' : 'bg-white text-[#DC2626] border-[#E7E0D3] hover:bg-[#F5EFE6]'"
+        class="px-3 py-2 rounded-md border text-xs font-semibold transition-colors cursor-pointer">
+        Stock Bajo
+      </button>
+
+      <button
+        type="button"
+        (click)="setEstadoFiltro('en_oferta')"
+        [ngClass]="estadoFiltro() === 'en_oferta' ? 'bg-[#143628] text-white border-[#143628]' : 'bg-white text-[#12261E] border-[#E7E0D3] hover:bg-[#F5EFE6]'"
+        class="px-3 py-2 rounded-md border text-xs font-semibold transition-colors cursor-pointer">
+        En Oferta
+      </button>
+
+      <button
+        *ngIf="busqueda() || categoriaFiltro() !== null || estadoFiltro() !== 'todos'"
+        (click)="limpiarFiltros()"
+        type="button"
+        title="Limpiar filtros"
+        class="p-2 rounded-md border border-[#E7E0D3] text-[#52665D] hover:bg-[#F5EFE6] cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLA DE INVENTARIO -->
+  <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+
+    <div *ngIf="isLoading()" class="py-12 text-center text-[#52665D] text-xs font-medium">
+      Cargando inventario...
+    </div>
+
+    <div *ngIf="!isLoading()" class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">Producto / Código</th>
+            <th class="py-2.5 px-3">Categoría</th>
+            <th class="py-2.5 px-3 text-right">Stock</th>
+            <th class="py-2.5 px-3 text-right">Costo Unit.</th>
+            <th class="py-2.5 px-3 text-right">Precio Venta</th>
+            <th class="py-2.5 px-3 text-right">Margen</th>
+            <th class="py-2.5 px-3">Vencimiento</th>
+            <th class="py-2.5 px-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+          <tr *ngFor="let it of productos()" class="hover:bg-[#F5EFE6] transition-colors">
+
+            <td class="py-2.5 px-3">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-semibold text-[#143628]">{{ it.nombre }}</span>
+                <span *ngIf="it.en_oferta" class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-[#D97706] border border-[#D97706]/35">
+                  -{{ Number(it.descuento_porcentaje) }}%
+                </span>
+              </div>
+              <p class="text-[11px] text-[#52665D] font-mono">
+                {{ it.codigo_barras }} · {{ it.contenido_por_caja }} u./caja
+              </p>
+            </td>
+
+            <td class="py-2.5 px-3 text-[#52665D]">
+              {{ it.categoria_nombre }}
+            </td>
+
+            <td class="py-2.5 px-3 text-right tabular-nums">
+              <span class="font-bold text-[#143628]" [ngClass]="it.stock_total_unidades <= it.stock_minimo_alerta ? 'text-[#DC2626]' : ''">
+                {{ it.stock_total_unidades }} u.
+              </span>
+              <span class="block text-[11px] text-[#52665D]">{{ it.stock_equivalente }}</span>
+            </td>
+
+            <td class="py-2.5 px-3 text-right tabular-nums font-medium text-[#52665D]">
+              Bs. {{ Number(it.costo_unitario_promedio).toFixed(2) }}
+            </td>
+
+            <td class="py-2.5 px-3 text-right tabular-nums">
+              <span *ngIf="it.en_oferta" class="block text-[11px] line-through text-[#52665D]">
+                Bs. {{ Number(it.precio_venta_normal).toFixed(2) }}
+              </span>
+              <span class="font-bold text-[#143628]">
+                Bs. {{ Number(it.precio_vigente).toFixed(2) }}
+              </span>
+            </td>
+
+            <td class="py-2.5 px-3 text-right tabular-nums font-semibold"
+              [ngClass]="it.margen_porcentaje >= 20 ? 'text-[#15803D]' : 'text-[#12261E]'">
+              {{ Number(it.margen_porcentaje).toFixed(1) }}%
+            </td>
+
+            <td class="py-2.5 px-3">
+              <div *ngIf="it.proximo_vencimiento">
+                <p class="font-mono text-[#143628] tabular-nums">{{ it.proximo_vencimiento | date:'dd/MM/yyyy' }}</p>
+                <span *ngIf="it.dias_para_vencer !== null && it.dias_para_vencer <= 0" class="text-[11px] font-semibold text-[#DC2626]">
+                  Vencido
+                </span>
+                <span *ngIf="it.dias_para_vencer !== null && it.dias_para_vencer > 0 && it.dias_para_vencer <= 30" class="text-[11px] font-semibold text-[#D97706] tabular-nums">
+                  En {{ it.dias_para_vencer }} d
+                </span>
+              </div>
+              <span *ngIf="!it.proximo_vencimiento" class="text-[#52665D]">—</span>
+            </td>
+
+            <td class="py-2.5 px-3 text-right whitespace-nowrap space-x-1">
+              <button
+                (click)="openModalLotes(it)"
+                type="button"
+                class="px-2.5 py-1 rounded-md bg-white hover:bg-[#F5EFE6] text-[#12261E] border border-[#E7E0D3] text-xs font-semibold cursor-pointer">
+                Lotes
+              </button>
+              <button
+                (click)="openModalPrecio(it)"
+                type="button"
+                class="px-2.5 py-1 rounded-md bg-white hover:bg-[#F5EFE6] text-[#12261E] border border-[#E7E0D3] text-xs font-semibold cursor-pointer">
+                Precio
+              </button>
+              <button
+                (click)="openModalAjuste(it)"
+                type="button"
+                class="px-2.5 py-1 rounded-md bg-white hover:bg-[#F5EFE6] text-[#12261E] border border-[#E7E0D3] text-xs font-semibold cursor-pointer">
+                Ajuste
+              </button>
+            </td>
+
+          </tr>
+
+          <tr *ngIf="productos().length === 0">
+            <td colspan="8" class="py-10 px-3 text-center text-[#52665D]">
+              No se encontraron productos con los filtros aplicados.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- MODAL 1: NUEVO PRODUCTO -->
+  <div *ngIf="showModalNuevoProducto()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#143628]/50">
+    <div class="bg-white rounded-lg max-w-xl w-full border border-[#E7E0D3] shadow-sm overflow-hidden max-h-[90vh] flex flex-col">
+
+      <div class="px-5 py-3.5 bg-[#F5EFE6] border-b border-[#E7E0D3] flex items-center justify-between">
+        <h2 class="text-base font-bold text-[#143628]">Nuevo Producto</h2>
+        <button type="button" (click)="closeModalNuevoProducto()" class="text-[#52665D] hover:text-[#12261E] p-1 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="productoForm" (ngSubmit)="guardarNuevoProducto()" class="p-5 overflow-y-auto space-y-3.5 text-xs">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Nombre *</label>
+            <input
+              type="text"
+              formControlName="nombre"
+              placeholder="Ej. Galletas Oreo Vainilla"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none" />
+            <span *ngIf="productoForm.get('nombre')?.touched && productoForm.get('nombre')?.invalid" class="text-[#DC2626] text-[11px] mt-1 block">
+              Mínimo 3 caracteres
+            </span>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-semibold text-[#12261E]">Código de Barras *</label>
+              <button
+                type="button"
+                (click)="productoForm.patchValue({ codigo_barras: generarCodigoBarras() })"
+                class="text-[11px] font-semibold text-[#E0432D] hover:underline cursor-pointer">
+                Generar
+              </button>
+            </div>
+            <input
+              type="text"
+              formControlName="codigo_barras"
+              placeholder="7771234005"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-mono focus:border-[#E0432D] outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Categoría *</label>
+            <select
+              formControlName="categoria_id"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-medium text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+              <option *ngFor="let cat of categorias()" [value]="cat.id">
+                {{ cat.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Unidad de Medida *</label>
+            <select
+              formControlName="unidad_medida"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-medium text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+              <option value="Unidad">Unidad</option>
+              <option value="Paquete">Paquete</option>
+              <option value="Botella">Botella</option>
+              <option value="Barra">Barra</option>
+              <option value="Bolsa">Bolsa</option>
+              <option value="Lata">Lata</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Unidades por Caja</label>
+          <div class="flex items-center gap-1.5 mb-2">
+            <button
+              type="button"
+              *ngFor="let u of [12, 24, 46, 100]"
+              (click)="setUnidadesRapidasNuevo(u)"
+              [ngClass]="productoForm.get('contenido_por_caja')?.value === u ? 'bg-[#143628] text-white' : 'bg-[#F5EFE6] text-[#12261E] hover:bg-[#EAE1D3]'"
+              class="px-2.5 py-1 rounded text-xs font-semibold tabular-nums cursor-pointer">
+              {{ u }} u.
+            </button>
+          </div>
+          <input
+            type="number"
+            formControlName="contenido_por_caja"
+            min="1"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold tabular-nums focus:border-[#E0432D] outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Precio Venta (Bs.) *</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-[#52665D]">Bs.</span>
+              <input
+                type="number"
+                step="0.10"
+                min="0.10"
+                formControlName="precio_venta_normal"
+                class="w-full pl-9 pr-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#12261E] mb-1">Stock Mínimo Alerta *</label>
+            <input
+              type="number"
+              min="0"
+              formControlName="stock_minimo_alerta"
+              class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold text-right tabular-nums focus:border-[#E0432D] outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Notas (Opcional)</label>
+          <textarea
+            formControlName="descripcion"
+            rows="2"
+            placeholder="Presentación, sabor o proveedor..."
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-[#E7E0D3] flex items-center justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeModalNuevoProducto()"
+            class="px-3.5 py-2 rounded-md text-xs font-semibold text-[#52665D] bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] cursor-pointer">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="isSaving()"
+            class="px-4 py-2 rounded-md text-xs font-semibold bg-[#E0432D] hover:bg-[#C43420] text-white disabled:opacity-50 cursor-pointer">
+            {{ isSaving() ? 'Guardando...' : 'Crear Producto' }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL 2: VER LOTES -->
+  <div *ngIf="showModalLotes()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#143628]/50">
+    <div class="bg-white rounded-lg max-w-3xl w-full border border-[#E7E0D3] shadow-sm overflow-hidden max-h-[90vh] flex flex-col">
+
+      <div class="px-5 py-3.5 bg-[#F5EFE6] border-b border-[#E7E0D3] flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-[#143628]">Lotes — {{ selectedProducto()?.nombre }}</h2>
+          <p class="text-xs text-[#52665D] tabular-nums">
+            {{ selectedProducto()?.codigo_barras }} · Stock total: {{ selectedProducto()?.stock_total_unidades }} u.
+          </p>
+        </div>
+        <button type="button" (click)="closeModalLotes()" class="text-[#52665D] hover:text-[#12261E] p-1 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto">
+        <div *ngIf="loadingLotes()" class="py-10 text-center text-[#52665D] text-xs">
+          Cargando lotes...
+        </div>
+
+        <div *ngIf="!loadingLotes() && lotesProducto().length === 0" class="py-10 text-center text-[#52665D] text-xs">
+          Sin lotes con stock activo para este producto.
+        </div>
+
+        <div *ngIf="!loadingLotes() && lotesProducto().length > 0" class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+              <tr>
+                <th class="py-2.5 px-3">N° Lote</th>
+                <th class="py-2.5 px-3">Proveedor</th>
+                <th class="py-2.5 px-3 text-right">Stock</th>
+                <th class="py-2.5 px-3 text-right">Costo Unit.</th>
+                <th class="py-2.5 px-3">Vencimiento</th>
+                <th class="py-2.5 px-3 text-right">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#E7E0D3]">
+              <tr *ngFor="let lot of lotesProducto()" class="hover:bg-[#F5EFE6]">
+                <td class="py-2.5 px-3 font-mono font-semibold text-[#143628]">{{ lot.numero_lote }}</td>
+                <td class="py-2.5 px-3 text-[#52665D]">{{ lot.proveedor || 'Sin proveedor' }}</td>
+                <td class="py-2.5 px-3 text-right tabular-nums font-bold text-[#143628]">{{ lot.stock_actual_unidades }} u.</td>
+                <td class="py-2.5 px-3 text-right tabular-nums text-[#12261E]">Bs. {{ Number(lot.costo_unitario).toFixed(2) }}</td>
+                <td class="py-2.5 px-3 font-mono tabular-nums text-[#143628]">{{ lot.fecha_vencimiento | date:'dd/MM/yyyy' }}</td>
+                <td class="py-2.5 px-3 text-right tabular-nums font-semibold">
+                  <span *ngIf="lot.estado_alerta === 'vencido'" class="text-[#DC2626]">
+                    Vencido ({{ Math.abs(lot.dias_restantes) }} d)
+                  </span>
+                  <span *ngIf="lot.estado_alerta === 'critico'" class="text-[#DC2626]">
+                    Urgente ({{ lot.dias_restantes }} d)
+                  </span>
+                  <span *ngIf="lot.estado_alerta === 'proximo'" class="text-[#D97706]">
+                    Alerta ({{ lot.dias_restantes }} d)
+                  </span>
+                  <span *ngIf="lot.estado_alerta === 'normal'" class="text-[#15803D]">
+                    Normal ({{ lot.dias_restantes }} d)
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 bg-[#F5EFE6] border-t border-[#E7E0D3] flex items-center justify-end">
+        <button
+          type="button"
+          (click)="closeModalLotes()"
+          class="px-3.5 py-1.5 rounded-md text-xs font-semibold bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] text-[#12261E] cursor-pointer">
+          Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 3: EDITAR PRECIO / OFERTA -->
+  <div *ngIf="showModalPrecioOferta()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#143628]/50">
+    <div class="bg-white rounded-lg max-w-md w-full border border-[#E7E0D3] shadow-sm overflow-hidden flex flex-col">
+
+      <div class="px-5 py-3.5 bg-[#F5EFE6] border-b border-[#E7E0D3] flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-[#143628]">Precio y Oferta</h2>
+          <p class="text-xs text-[#52665D]">{{ selectedProducto()?.nombre }}</p>
+        </div>
+        <button type="button" (click)="closeModalPrecio()" class="text-[#52665D] hover:text-[#12261E] p-1 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="precioOfertaForm" (ngSubmit)="guardarPrecioOferta()" class="p-5 space-y-3.5 text-xs">
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Precio Normal (Bs.) *</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-[#52665D]">Bs.</span>
+            <input
+              type="number"
+              step="0.10"
+              min="0.10"
+              formControlName="precio_venta_normal"
+              class="w-full pl-9 pr-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-md bg-[#F5EFE6] border border-[#E7E0D3] space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-[#143628]">Activar precio de oferta</span>
+            <input
+              type="checkbox"
+              formControlName="en_oferta"
+              (change)="toggleOfertaModal($event)"
+              class="w-4 h-4 accent-[#E0432D] cursor-pointer" />
+          </div>
+
+          <div *ngIf="precioOfertaForm.get('en_oferta')?.value" class="grid grid-cols-2 gap-3 pt-2 border-t border-[#E7E0D3]">
+            <div>
+              <label class="block font-semibold text-[#12261E] mb-1">Descuento (%)</label>
+              <input
+                type="number"
+                min="1"
+                max="90"
+                formControlName="descuento_porcentaje"
+                class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums focus:border-[#E0432D] outline-none bg-white" />
+            </div>
+
+            <div>
+              <label class="block font-semibold text-[#12261E] mb-1">Precio Oferta (Bs.)</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-[#52665D]">Bs.</span>
+                <input
+                  type="number"
+                  step="0.10"
+                  formControlName="precio_venta_oferta"
+                  class="w-full pl-8 pr-2.5 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none bg-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-[#E7E0D3] flex items-center justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeModalPrecio()"
+            class="px-3.5 py-2 rounded-md text-xs font-semibold text-[#52665D] bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] cursor-pointer">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="isSaving()"
+            class="px-4 py-2 rounded-md text-xs font-semibold bg-[#E0432D] hover:bg-[#C43420] text-white disabled:opacity-50 cursor-pointer">
+            {{ isSaving() ? 'Guardando...' : 'Guardar Precios' }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL 4: AJUSTE DE STOCK -->
+  <div *ngIf="showModalAjuste()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#143628]/50">
+    <div class="bg-white rounded-lg max-w-md w-full border border-[#E7E0D3] shadow-sm overflow-hidden flex flex-col">
+
+      <div class="px-5 py-3.5 bg-[#F5EFE6] border-b border-[#E7E0D3] flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-[#143628]">Ajuste de Stock</h2>
+          <p class="text-xs text-[#52665D]">{{ selectedProducto()?.nombre }}</p>
+        </div>
+        <button type="button" (click)="closeModalAjuste()" class="text-[#52665D] hover:text-[#12261E] p-1 cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="ajusteStockForm" (ngSubmit)="guardarAjusteStock()" class="p-5 space-y-3.5 text-xs">
+
+        <div class="grid grid-cols-2 gap-3 p-3 bg-[#F5EFE6] rounded-md border border-[#E7E0D3] tabular-nums">
+          <div>
+            <p class="text-[11px] font-medium text-[#52665D]">Stock en Sistema</p>
+            <p class="text-lg font-bold text-[#143628]">{{ selectedProducto()?.stock_total_unidades }} u.</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[11px] font-medium text-[#52665D]">Diferencia</p>
+            <p class="text-lg font-bold" [ngClass]="diferenciaAjuste() < 0 ? 'text-[#DC2626]' : (diferenciaAjuste() > 0 ? 'text-[#15803D]' : 'text-[#52665D]')">
+              {{ diferenciaAjuste() > 0 ? '+' : '' }}{{ diferenciaAjuste() }} u.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Tipo de Ajuste *</label>
+          <select
+            formControlName="tipo_ajuste"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-medium text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+            <option value="conteo_fisico">Conteo Físico</option>
+            <option value="merma_rotura">Merma por Rotura</option>
+            <option value="merma_vencimiento">Merma por Vencimiento</option>
+            <option value="merma_perdida">Pérdida o Faltante</option>
+            <option value="ingreso_ajuste">Sobrante / Ingreso</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Nuevo Stock Real (Unidades) *</label>
+          <input
+            type="number"
+            min="0"
+            formControlName="nuevo_stock"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+          <span *ngIf="ajusteStockForm.get('nuevo_stock')?.touched && ajusteStockForm.get('nuevo_stock')?.invalid" class="text-[#DC2626] text-[11px] mt-1 block">
+            Debe ser mayor o igual a 0.
+          </span>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Motivo *</label>
+          <textarea
+            formControlName="motivo"
+            rows="2"
+            placeholder="Describe el motivo del ajuste..."
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none"></textarea>
+          <span *ngIf="ajusteStockForm.get('motivo')?.touched && ajusteStockForm.get('motivo')?.invalid" class="text-[#DC2626] text-[11px] mt-1 block">
+            Mínimo 5 caracteres.
+          </span>
+        </div>
+
+        <div class="pt-3 border-t border-[#E7E0D3] flex items-center justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeModalAjuste()"
+            class="px-3.5 py-2 rounded-md text-xs font-semibold text-[#52665D] bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] cursor-pointer">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="isSaving()"
+            class="px-4 py-2 rounded-md text-xs font-semibold bg-[#E0432D] hover:bg-[#C43420] text-white disabled:opacity-50 cursor-pointer">
+            {{ isSaving() ? 'Guardando...' : 'Confirmar Ajuste' }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>

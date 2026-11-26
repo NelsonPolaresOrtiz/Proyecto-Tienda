@@ -1,0 +1,346 @@
+<div class="space-y-4">
+
+  <!-- HEADER -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-[#143628] tracking-tight">Ingresos y Egresos</h1>
+
+    <div class="bg-white px-3 py-1.5 rounded-md border border-[#E7E0D3] text-xs font-semibold text-[#143628]">
+      {{ auth.currentSucursal() }}
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div *ngIf="feedbackMessage()"
+    [ngClass]="feedbackMessage()?.type === 'success' ? 'bg-white text-[#15803D] border-[#15803D]' : 'bg-white text-[#DC2626] border-[#DC2626]'"
+    class="px-3.5 py-2.5 rounded-md border text-xs font-semibold flex items-center justify-between">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="text-[#52665D] hover:text-[#12261E] p-0.5 cursor-pointer">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- KPI -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Total Ingresos</span>
+        <svg class="w-4 h-4 text-[#15803D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#15803D] mt-1.5 tabular-nums">
+        +Bs. {{ resumen().totalIngresos | number:'1.2-2' }}
+      </p>
+      <div class="mt-2 pt-2 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#52665D] tabular-nums">
+        <span>Ventas: Bs. {{ resumen().totalVentas | number:'1.2-2' }}</span>
+        <span>Extra: Bs. {{ resumen().totalIngresosExtra | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Total Egresos</span>
+        <svg class="w-4 h-4 text-[#DC2626]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold text-[#DC2626] mt-1.5 tabular-nums">
+        -Bs. {{ resumen().totalEgresos | number:'1.2-2' }}
+      </p>
+      <div class="mt-2 pt-2 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#52665D] tabular-nums">
+        <span>Caja: Bs. {{ resumen().totalEfectivoCaja | number:'1.2-2' }}</span>
+        <span>QR: Bs. {{ resumen().totalTransferenciaQR | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg border border-[#E7E0D3] border-l-4 border-l-[#143628] shadow-xs">
+      <div class="flex items-center justify-between text-[#52665D]">
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Saldo Neto</span>
+        <svg class="w-4 h-4 text-[#52665D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/>
+        </svg>
+      </div>
+      <p class="text-xl font-bold mt-1.5 tabular-nums" [ngClass]="resumen().saldoNetoCaja >= 0 ? 'text-[#15803D]' : 'text-[#DC2626]'">
+        Bs. {{ resumen().saldoNetoCaja | number:'1.2-2' }}
+      </p>
+      <div class="mt-2 pt-2 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#52665D] tabular-nums">
+        <span>Caja Física</span>
+        <span class="font-semibold text-[#143628]">Bs. {{ resumen().saldoCajaFisica | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- REGISTRO -->
+  <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+
+    <div class="flex items-center border-b border-[#E7E0D3] bg-[#F5EFE6] px-4 pt-2.5 gap-2">
+      <button
+        type="button"
+        (click)="setTabRegistro('egreso')"
+        [ngClass]="tabRegistro() === 'egreso' ? 'bg-white text-[#DC2626] border-t-2 border-t-[#DC2626] border-x border-[#E7E0D3] font-bold' : 'text-[#52665D] hover:text-[#12261E] font-semibold'"
+        class="px-3.5 py-2 rounded-t-md text-xs transition-colors inline-flex items-center gap-1.5 -mb-px cursor-pointer">
+        <span>Registrar Egreso</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setTabRegistro('ingreso')"
+        [ngClass]="tabRegistro() === 'ingreso' ? 'bg-white text-[#15803D] border-t-2 border-t-[#15803D] border-x border-[#E7E0D3] font-bold' : 'text-[#52665D] hover:text-[#12261E] font-semibold'"
+        class="px-3.5 py-2 rounded-t-md text-xs transition-colors inline-flex items-center gap-1.5 -mb-px cursor-pointer">
+        <span>Registrar Ingreso Extra</span>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-4 sm:p-5 space-y-4 text-xs">
+
+      <div>
+        <label class="block font-semibold text-[#12261E] mb-1.5">
+          {{ tabRegistro() === 'egreso' ? 'Categoría de Egreso *' : 'Concepto de Ingreso *' }}
+        </label>
+
+        <div *ngIf="tabRegistro() === 'egreso'" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+          <button
+            *ngFor="let cat of categoriasEgreso"
+            type="button"
+            (click)="setCategoria(cat)"
+            [ngClass]="form.get('categoria_gasto')?.value === cat ? 'bg-[#143628] text-white border-[#143628]' : 'bg-white text-[#12261E] hover:bg-[#F5EFE6] border-[#E7E0D3]'"
+            class="py-2 px-2.5 rounded-md border font-semibold text-center cursor-pointer">
+            {{ cat }}
+          </button>
+        </div>
+
+        <div *ngIf="tabRegistro() === 'ingreso'" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button
+            *ngFor="let cat of categoriasIngreso"
+            type="button"
+            (click)="setCategoria(cat)"
+            [ngClass]="form.get('categoria_gasto')?.value === cat ? 'bg-[#143628] text-white border-[#143628]' : 'bg-white text-[#12261E] hover:bg-[#F5EFE6] border-[#E7E0D3]'"
+            class="py-2 px-2.5 rounded-md border font-semibold text-center cursor-pointer">
+            {{ cat }}
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div *ngIf="auth.isAdmin()">
+          <label class="block font-semibold text-[#12261E] mb-1">Sucursal *</label>
+          <select
+            [ngModel]="sucursalRegistroId()"
+            [ngModelOptions]="{standalone: true}"
+            (ngModelChange)="sucursalRegistroId.set(Number($event))"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] font-semibold text-[#143628] bg-white focus:border-[#E0432D] outline-none">
+            <option *ngFor="let s of sucursales()" [value]="s.id">{{ s.nombre }} ({{ s.codigo }})</option>
+          </select>
+        </div>
+
+        <div [ngClass]="auth.isAdmin() ? 'lg:col-span-2' : 'lg:col-span-3'">
+          <label class="block font-semibold text-[#12261E] mb-1">
+            {{ tabRegistro() === 'egreso' ? 'Origen de Fondos *' : 'Destino de Fondos *' }}
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+
+            <div
+              (click)="setMetodoPago('efectivo')"
+              [ngClass]="form.get('metodo_pago')?.value === 'efectivo' ? 'border-[#143628] bg-[#F5EFE6]' : 'border-[#E7E0D3] bg-white'"
+              class="p-2.5 rounded-md border cursor-pointer flex items-center gap-2.5">
+              <input type="radio" formControlName="metodo_pago" value="efectivo" class="accent-[#E0432D]" />
+              <span class="font-semibold text-[#143628]">Caja Física (Efectivo)</span>
+            </div>
+
+            <div
+              (click)="setMetodoPago('transferencia_qr')"
+              [ngClass]="form.get('metodo_pago')?.value === 'transferencia_qr' ? 'border-[#143628] bg-[#F5EFE6]' : 'border-[#E7E0D3] bg-white'"
+              class="p-2.5 rounded-md border cursor-pointer flex items-center gap-2.5">
+              <input type="radio" formControlName="metodo_pago" value="transferencia_qr" class="accent-[#143628]" />
+              <span class="font-semibold text-[#143628]">QR / Transferencia Bancaria</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">Monto (Bs.) *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-[#52665D]">Bs.</span>
+            <input
+              type="number"
+              step="0.50"
+              min="0.50"
+              formControlName="monto"
+              class="w-full pl-9 pr-3 py-2 rounded-md border border-[#E7E0D3] text-sm font-bold text-right tabular-nums text-[#143628] focus:border-[#E0432D] outline-none" />
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label class="block font-semibold text-[#12261E] mb-1">Concepto *</label>
+          <input
+            type="text"
+            formControlName="concepto"
+            [placeholder]="tabRegistro() === 'egreso' ? 'Ej: Pago de luz / Compra de bolsas' : 'Ej: Reposición de cambio en monedas'"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">
+            {{ tabRegistro() === 'egreso' ? 'Beneficiario' : 'Entregado Por' }}
+          </label>
+          <input
+            type="text"
+            formControlName="beneficiario"
+            placeholder="Opcional"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#12261E] mb-1">N° Comprobante</label>
+          <input
+            type="text"
+            formControlName="comprobante_nro"
+            placeholder="REC-00412"
+            class="w-full px-3 py-2 rounded-md border border-[#E7E0D3] focus:border-[#E0432D] outline-none" />
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-[#E7E0D3] flex justify-end">
+        <button
+          type="submit"
+          [disabled]="isSaving() || form.invalid"
+          [ngClass]="tabRegistro() === 'egreso' ? 'bg-[#E0432D] hover:bg-[#C43420]' : 'bg-[#15803D] hover:bg-[#166534]'"
+          class="px-5 py-2 rounded-md font-semibold text-white disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer">
+          <span>
+            {{ isSaving() ? 'Registrando...' : (tabRegistro() === 'egreso' ? 'Registrar Egreso' : 'Registrar Ingreso Extra') }}
+          </span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- TABLA DE MOVIMIENTOS -->
+  <div class="bg-white rounded-lg border border-[#E7E0D3] shadow-xs overflow-hidden">
+
+    <div class="p-4 border-b border-[#E7E0D3] space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold text-[#143628]">Movimientos</h2>
+        <span class="text-xs text-[#52665D] tabular-nums">{{ movimientos().length }} registro(s)</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
+        <select
+          *ngIf="auth.isAdmin()"
+          [ngModel]="filtroSucursal()"
+          (ngModelChange)="filtroSucursal.set($event); loadMovimientos()"
+          class="px-3 py-2 rounded-md border border-[#E7E0D3] bg-white font-medium text-[#143628] outline-none">
+          <option value="todas">Todas las Tiendas</option>
+          <option *ngFor="let s of sucursales()" [value]="s.id">{{ s.nombre }}</option>
+        </select>
+
+        <select
+          [ngModel]="filtroTipo()"
+          (ngModelChange)="filtroTipo.set($event); loadMovimientos()"
+          class="px-3 py-2 rounded-md border border-[#E7E0D3] bg-white font-medium text-[#143628] outline-none">
+          <option value="todos">Ingresos y Egresos</option>
+          <option value="ingreso">Solo Ingresos</option>
+          <option value="egreso">Solo Egresos</option>
+        </select>
+
+        <select
+          [ngModel]="filtroCategoria()"
+          (ngModelChange)="filtroCategoria.set($event); loadMovimientos()"
+          class="px-3 py-2 rounded-md border border-[#E7E0D3] bg-white font-medium text-[#143628] outline-none">
+          <option value="todas">Todas las Categorías</option>
+          <optgroup label="Egresos">
+            <option *ngFor="let c of categoriasEgreso" [value]="c">{{ c }}</option>
+          </optgroup>
+          <optgroup label="Ingresos Extra">
+            <option *ngFor="let c of categoriasIngreso" [value]="c">{{ c }}</option>
+          </optgroup>
+        </select>
+
+        <input
+          type="date"
+          [ngModel]="filtroFechaInicio()"
+          (ngModelChange)="filtroFechaInicio.set($event); loadMovimientos()"
+          class="px-3 py-2 rounded-md border border-[#E7E0D3] bg-white text-[#143628] outline-none" />
+
+        <div class="flex gap-2">
+          <input
+            type="date"
+            [ngModel]="filtroFechaFin()"
+            (ngModelChange)="filtroFechaFin.set($event); loadMovimientos()"
+            class="flex-1 px-3 py-2 rounded-md border border-[#E7E0D3] bg-white text-[#143628] outline-none" />
+          <button
+            type="button"
+            (click)="limpiarFiltros()"
+            class="px-3 py-2 rounded-md bg-white border border-[#E7E0D3] hover:bg-[#F5EFE6] text-[#12261E] font-semibold cursor-pointer">
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-[#F5EFE6] text-[#52665D] uppercase tracking-wider font-semibold border-b border-[#E7E0D3]">
+          <tr>
+            <th class="py-2.5 px-3">Fecha</th>
+            <th class="py-2.5 px-3">Sucursal</th>
+            <th class="py-2.5 px-3">Tipo / Categoría</th>
+            <th class="py-2.5 px-3">Método</th>
+            <th class="py-2.5 px-3">Concepto</th>
+            <th class="py-2.5 px-3">Usuario</th>
+            <th class="py-2.5 px-3 text-right">Monto</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E7E0D3]">
+
+          <tr *ngIf="movimientos().length === 0">
+            <td colspan="7" class="py-10 px-3 text-center text-[#52665D]">
+              No hay movimientos registrados.
+            </td>
+          </tr>
+
+          <tr *ngFor="let m of movimientos()" class="hover:bg-[#F5EFE6] transition-colors">
+            <td class="py-2.5 px-3 font-mono text-[11px] text-[#52665D] whitespace-nowrap tabular-nums">
+              {{ m.fecha_gasto | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="py-2.5 px-3 font-medium text-[#143628] whitespace-nowrap">
+              {{ m.sucursal_nombre }}
+            </td>
+            <td class="py-2.5 px-3 whitespace-nowrap font-semibold"
+              [ngClass]="m.tipo === 'ingreso' ? 'text-[#15803D]' : 'text-[#DC2626]'">
+              {{ m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso' }} · {{ m.categoria_gasto }}
+            </td>
+            <td class="py-2.5 px-3 whitespace-nowrap text-[#52665D]">
+              {{ m.metodo_pago === 'efectivo' ? 'Caja Física' : 'QR / Banco' }}
+            </td>
+            <td class="py-2.5 px-3">
+              <p class="font-medium text-[#143628]">{{ m.concepto }}</p>
+              <p *ngIf="m.beneficiario || m.comprobante_nro" class="text-[11px] text-[#52665D]">
+                {{ m.beneficiario || 'S/N' }} · {{ m.comprobante_nro || 'S/N' }}
+              </p>
+            </td>
+            <td class="py-2.5 px-3 text-[#52665D] whitespace-nowrap">
+              {{ m.cajero_nombre }}
+            </td>
+            <td class="py-2.5 px-3 text-right font-bold tabular-nums whitespace-nowrap"
+              [ngClass]="m.tipo === 'ingreso' ? 'text-[#15803D]' : 'text-[#DC2626]'">
+              {{ m.tipo === 'ingreso' ? '+' : '-' }} Bs. {{ Number(m.monto).toFixed(2) }}
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>

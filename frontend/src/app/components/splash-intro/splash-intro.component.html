@@ -1,0 +1,46 @@
+<div
+  [ngClass]="isExiting() ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'"
+  class="fixed inset-0 z-50 bg-[#143628] flex items-center justify-center overflow-hidden transition-all duration-[400ms] ease-out select-none">
+
+  <!-- Reproductor de Video Intro -->
+  <video
+    #introVideo
+    *ngIf="!useFallback()"
+    autoplay
+    muted
+    playsinline
+    preload="auto"
+    (timeupdate)="onTimeUpdate($event)"
+    (ended)="finishIntro()"
+    (error)="triggerFallback()"
+    class="w-full h-full object-cover">
+    <source src="/videos/intro-candyboom.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Fallback CSS Animado -->
+  <div *ngIf="useFallback()" class="flex flex-col items-center justify-center text-center px-6 animate-fadeIn">
+    <div class="w-24 h-24 rounded-lg bg-white p-2.5 border border-[#E7E0D3] mb-5 flex items-center justify-center animate-pulse">
+      <img
+        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUqPzqsm7tJ63hm4gjhQrAFgglvGWhuuSIO9uFPP61bqkJVavDaLVnNMwGvJvp_podWd28SCe7SiXSnpzTcfrEVwrnn5EaooYgbuNpscxo2VrjQ-VRuXzSCE6m2tmOKFc_O0XKE3dGyyIKBtPTVjFqu4pkwEErUAGJXT7rMKarAA_yUN_1_y4aqKGfxCh1yJwmAguWdTpt-n6-ZWRox0gHVjl5q7rdsP5pfLySiMNQ"
+        alt="Candy Boom Logo"
+        class="w-full h-full object-contain" />
+    </div>
+    <h1 class="text-2xl font-extrabold text-[#FBF8F3] tracking-tight">Candy Boom</h1>
+    <p class="text-xs text-[#FBF8F3]/75 font-medium mt-2 tracking-wide">Cargando sistema...</p>
+    <div class="w-44 h-1 bg-[#1E4D3B] rounded-full overflow-hidden mt-4">
+      <div class="h-full bg-[#E0432D] rounded-full animate-pulse w-2/3"></div>
+    </div>
+  </div>
+
+  <!-- Botón discreto Saltar -->
+  <button
+    type="button"
+    (click)="finishIntro()"
+    class="fixed bottom-6 right-6 z-20 px-4 py-2 rounded-md bg-[#143628]/90 hover:bg-[#1E4D3B] border border-[#FBF8F3]/25 text-xs font-semibold text-[#FBF8F3] transition-colors cursor-pointer inline-flex items-center gap-1.5">
+    <span>Saltar</span>
+    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+    </svg>
+  </button>
+
+</div>
